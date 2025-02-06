@@ -25,24 +25,15 @@ public class ColorCircle : Control
         int height = this.Height;
         int radius = Math.Min(width, height) / 2;
 
-        using (Bitmap bmp = new Bitmap(width, height))
+        // Create a path to draw the color wheel using FillPie
+        Rectangle rect = new Rectangle(0, 0, width, height);
+        for (int i = 0; i < 360; i++) // Iterate through 360 degrees for hue
         {
-            for (int y = 0; y < height; y++)
+            // Create an inner and outer radial gradient for each segment
+            using (Brush brush = new SolidBrush(HsvToRgb(i, 1, 1)))
             {
-                for (int x = 0; x < width; x++)
-                {
-                    double angle = Math.Atan2(y - height / 2, x - width / 2) * 180 / Math.PI;
-                    double distance = Math.Sqrt(Math.Pow(x - width / 2, 2) + Math.Pow(y - height / 2, 2));
-                    double maxRadius = radius;
-
-                    if (distance <= maxRadius)
-                    {
-                        Color color = HsvToRgb(angle, distance / maxRadius, 1);
-                        bmp.SetPixel(x, y, color);
-                    }
-                }
+                g.FillPie(brush, rect, i, 1); // Draw each color segment
             }
-            g.DrawImage(bmp, 0, 0);
         }
     }
 

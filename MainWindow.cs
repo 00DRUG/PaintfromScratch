@@ -14,7 +14,7 @@ namespace PaintfromScratch
         public MainWindow()
         {
             InitializeComponent();
-
+            CustomParameters();
         }
 
         private bool isPainting = false;
@@ -23,6 +23,7 @@ namespace PaintfromScratch
         private Color brushColor = Color.Black;
         private float brushThickness = 3f;
         private DashStyle brushStyle = DashStyle.Solid;
+
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -67,7 +68,58 @@ namespace PaintfromScratch
             newTabPage.Controls.Add(pictureBox);
             tabControl.TabPages.Add(newTabPage);
             tabControl.SelectedTab = newTabPage;
+
+            tabControl.MouseUp += TabControl_MouseUp;
         }
+
+
+        private ContextMenuStrip contextMenuStrip;
+
+        private void TabControl_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                TabControl tabControl = sender as TabControl;
+                if (tabControl == null) return;
+
+                // Find the clicked tab index by checking the tab rectangles
+                int tabIndex = -1;
+                for (int i = 0; i < tabControl.TabCount; i++)
+                {
+                    Rectangle tabRect = tabControl.GetTabRect(i);
+                    if (tabRect.Contains(e.Location))
+                    {
+                        tabIndex = i;
+                        break;
+                    }
+                }
+
+                if (tabIndex == -1) return;
+                ContextMenuStrip contextMenu = new ContextMenuStrip();
+                ToolStripMenuItem renameMenuItem = new ToolStripMenuItem("Rename Tab");
+
+                renameMenuItem.Click += (s, args) =>
+                {
+                    if (tabIndex >= 0 && tabIndex < tabControl.TabCount)
+                    {
+                        TabPage selectedTab = tabControl.TabPages[tabIndex];
+
+                        string newTabName = Microsoft.VisualBasic.Interaction.InputBox(
+                            "Enter new tab name:", "Rename Tab", selectedTab.Text);
+
+                        if (!string.IsNullOrEmpty(newTabName))
+                        {
+                           selectedTab.Text = newTabName;
+                        }
+                    }
+                };
+
+                contextMenu.Items.Add(renameMenuItem);
+                contextMenu.Show(tabControl, e.Location);
+            }
+        }
+
+
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
@@ -90,10 +142,24 @@ namespace PaintfromScratch
 
                 using (Graphics g = Graphics.FromImage(canvasBitmap))
                 {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(brushColor, brushThickness))
+                    if (brushStyle == DashStyle.Solid)
+                    {
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                    }
+                    else
+                    {
+                        g.SmoothingMode = SmoothingMode.None;
+                    }
+
+                    using (Pen pen = new Pen(brushColor, Math.Max(brushThickness, 2f)))
                     {
                         pen.DashStyle = brushStyle;
+
+                        if (brushStyle != DashStyle.Solid)
+                        {
+                            pen.DashCap = DashCap.Flat;
+                        }
+
                         g.DrawLine(pen, lastPoint, e.Location);
                     }
                 }
@@ -110,6 +176,7 @@ namespace PaintfromScratch
                 isPainting = false;
             }
         }
+
         private void ColorCircle_ColorSelected(object sender, Color selectedColor)
         {
             redSwitch.Value = selectedColor.R;
@@ -126,8 +193,9 @@ namespace PaintfromScratch
 
         private void OkButton_Click(object sender, EventArgs e)
         {
-            brushColor = colorPreview.BackColor; 
+            brushColor = colorPreview.BackColor;
         }
+
         private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
             brushThickness = (float)thicknessNumericUpDown.Value;
