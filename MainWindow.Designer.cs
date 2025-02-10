@@ -28,6 +28,9 @@ namespace PaintfromScratch
         private void CustomParameters()
         {
             switchParameters();
+            BrushButton.BackgroundImageLayout = ImageLayout.Zoom;
+            LineStyleComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            LineStyleComboBox.SelectedIndex = 0;
         }
         private void switchParameters() { 
             redSwitch.Minimum = 0;
@@ -40,6 +43,7 @@ namespace PaintfromScratch
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             NewButton = new ToolStripMenuItem();
@@ -65,6 +69,7 @@ namespace PaintfromScratch
             toolStripButton3 = new ToolStripButton();
             toolStripButton4 = new ToolStripButton();
             toolStrip1 = new ToolStrip();
+            toolStripDropDownButton1 = new ToolStripDropDownButton();
             toolStripSeparator1 = new ToolStripSeparator();
             toolStripButton5 = new ToolStripButton();
             menuStrip1.SuspendLayout();
@@ -249,15 +254,18 @@ namespace PaintfromScratch
             // 
             // LineStyleComboBox
             // 
-            LineStyleComboBox.Items.AddRange(new object[] { "Solid", "Dash", "Dot", "DashDot", "DashDotDot" });
+            LineStyleComboBox.ImeMode = ImeMode.NoControl;
+            LineStyleComboBox.Items.AddRange(new object[] { "Dash", "DashDot", "DashDotDot", "Dot", "Solid" });
             LineStyleComboBox.Location = new Point(3, 3);
             LineStyleComboBox.Name = "LineStyleComboBox";
             LineStyleComboBox.Size = new Size(70, 23);
+            LineStyleComboBox.Sorted = true;
             LineStyleComboBox.TabIndex = 1;
             LineStyleComboBox.SelectedIndexChanged += LineStyleComboBox_SelectedIndexChanged;
             // 
             // BrushButton
             // 
+            BrushButton.BackgroundImage = PublicResXFileCodeGenerator.Resources.brush;
             BrushButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
             BrushButton.ImageTransparentColor = Color.Magenta;
             BrushButton.Name = "BrushButton";
@@ -291,12 +299,21 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { BrushButton, toolStripButton2, toolStripButton3, toolStripButton4, toolStripSeparator1, toolStripButton5 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { BrushButton, toolStripDropDownButton1, toolStripButton2, toolStripButton3, toolStripButton4, toolStripSeparator1, toolStripButton5 });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 25);
             toolStrip1.TabIndex = 1;
             toolStrip1.Text = "toolStrip1";
+            // 
+            // toolStripDropDownButton1
+            // 
+            toolStripDropDownButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripDropDownButton1.Image = (Image)resources.GetObject("toolStripDropDownButton1.Image");
+            toolStripDropDownButton1.ImageTransparentColor = Color.Magenta;
+            toolStripDropDownButton1.Name = "toolStripDropDownButton1";
+            toolStripDropDownButton1.Size = new Size(29, 22);
+            toolStripDropDownButton1.Text = "toolStripDropDownButton1";
             // 
             // toolStripSeparator1
             // 
@@ -365,5 +382,6 @@ namespace PaintfromScratch
         private TextBox textBox_B;
         private TextBox textBox_G;
         private TextBox textBox_R;
+        private ToolStripDropDownButton toolStripDropDownButton1;
     }
 }
