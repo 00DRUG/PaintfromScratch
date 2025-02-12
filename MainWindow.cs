@@ -7,8 +7,10 @@ using PaintfromScratch;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Taskbar;
 namespace PaintfromScratch
 {
+
     public partial class MainWindow : Form
     {
+
         public MainWindow()
         {
             InitializeComponent();
@@ -20,6 +22,7 @@ namespace PaintfromScratch
         private PictureBox colorPreview;
         private ShapeType selectedShape = ShapeType.None;
         private bool isPainting = false;
+        private bool isErasing = false;
         private Point lastPoint;
         private bool isPushed_Brush = false;
         private bool isPushed_Erase = false;
@@ -29,6 +32,12 @@ namespace PaintfromScratch
         private DashStyle brushStyle = DashStyle.Solid;
         private Point startShapePoint;
         private List<Shape> shapes = new List<Shape>();
+
+        private Shape selectedShapeForManipulation = null;
+        private bool isManipulatingShape = false;
+        private Point lastMousePoint;
+        private enum ManipulationMode { None, Move, Resize }
+        private ManipulationMode currentManipulationMode = ManipulationMode.None;
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -49,13 +58,19 @@ namespace PaintfromScratch
             UnclickAllTools(sender);
             BackgroundTool.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
         }
+        private void ManipulateButton_Click(object sender, EventArgs e)
+        {
+            isManipulatingShape = !isManipulatingShape;
+            UnclickAllTools(sender);
+            ManipulateButton.BackColor = isManipulatingShape ? Color.LightGreen : Color.Transparent;
+        }
         private void UnclickAllTools(object sender)
         {
-            object[] tools = { BrushButton, EraseButton, BackgroundTool, rectItem, ellipseItem };
+            object[] tools = { BrushButton, EraseButton, BackgroundTool,ManipulateButton, rectItem, ellipseItem };
 
             foreach (object tool in tools)
             {
-                if (tool == sender) continue; // Skip the clicked tool
+                if (tool == sender) continue;
 
                 switch (tool)
                 {
@@ -63,6 +78,7 @@ namespace PaintfromScratch
                         btn.BackColor = Color.Transparent;
                         if (btn == BrushButton) isPushed_Brush = false;
                         if (btn == EraseButton) isPushed_Erase = false;
+                        if (btn == ManipulateButton) isManipulatingShape = false;
                         if (btn == BackgroundTool) isPushed_Background = false;
                         break;
 
@@ -113,7 +129,7 @@ namespace PaintfromScratch
             pictureBox.MouseDown += PictureBox_MouseDown;
             pictureBox.MouseMove += PictureBox_MouseMove;
             pictureBox.MouseUp += PictureBox_MouseUp;
-            
+            pictureBox.Paint += PictureBox_Paint;
             newTabPage.Controls.Add(pictureBox);
 
             tabControl.TabPages.Add(newTabPage);
@@ -219,8 +235,6 @@ namespace PaintfromScratch
         }
 
 
-        private ContextMenuStrip contextMenuStrip;
-
         private void TabControl_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -228,7 +242,6 @@ namespace PaintfromScratch
                 TabControl tabControl = sender as TabControl;
                 if (tabControl == null) return;
 
-                // Find the clicked tab index by checking the tab rectangles
                 int tabIndex = -1;
                 for (int i = 0; i < tabControl.TabCount; i++)
                 {
@@ -267,9 +280,17 @@ namespace PaintfromScratch
 
         private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null) return;
+
             foreach (var shape in shapes)
             {
                 shape.Draw(e.Graphics);
+            }
+   
+            if (selectedShapeForManipulation != null)
+            {
+                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
             }
         }
 
@@ -277,32 +298,67 @@ namespace PaintfromScratch
         {
             if (e.Button == MouseButtons.Left)
             {
-                if (isPushed_Brush)
+                if (isPushed_Brush) 
                 {
                     isPainting = true;
                     lastPoint = e.Location;
                 }
-                if (selectedShape != ShapeType.None)
+                else if (isPushed_Erase)
+                {
+                    isErasing = true;
+                    lastPoint = e.Location;
+                }
+                else if (selectedShape != ShapeType.None) 
                 {
                     startShapePoint = e.Location;
                 }
-                if (isPushed_Background)
+                else if (isPushed_Background) 
                 {
                     PictureBox pictureBox = sender as PictureBox;
                     if (pictureBox == null || pictureBox.Image == null) return;
 
                     Bitmap bmp = (Bitmap)pictureBox.Image;
-                    Color clickedColor = bmp.GetPixel(e.X, e.Y); // Get the color at the clicked point
-                    Color fillColor = brushColor; 
+                    Color clickedColor = bmp.GetPixel(e.X, e.Y);
+                    Color fillColor = brushColor;
 
                     FloodFill(bmp, e.Location, clickedColor, fillColor);
-                    pictureBox.Invalidate(); 
+                    pictureBox.Invalidate();
+                }
+                else if (isManipulatingShape) 
+                {
+                    selectedShapeForManipulation = shapes.FirstOrDefault(shape => shape.Contains(e.Location));
+                    if (selectedShapeForManipulation != null)
+                    {
+                        lastMousePoint = e.Location;
+                        currentManipulationMode = ManipulationMode.Move;
+
+                        if (IsNearResizeHandle(selectedShapeForManipulation, e.Location))
+                        {
+                            currentManipulationMode = ManipulationMode.Resize;
+                            Cursor = Cursors.SizeNWSE;
+                        }
+                        else
+                        {
+                            Cursor = Cursors.SizeAll;
+                        }
+                    }
                 }
             }
         }
+        private bool IsNearResizeHandle(Shape shape, Point point)
+        {
+            int handleSize = 8; 
+            Rectangle bounds = shape.Bounds;
+
+            // Point near handles
+            return (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-left
+                   (Math.Abs(point.X - bounds.Right) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-right
+                   (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Bottom) < handleSize) || // Bottom-left
+                   (Math.Abs(point.X - bounds.Right) < handleSize && Math.Abs(point.Y - bounds.Bottom) < handleSize); // Bottom-right
+        }
         private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
         {
-            if (targetColor.ToArgb() == fillColor.ToArgb()) return; // Avoid infinite loops
+            if (targetColor.ToArgb() == fillColor.ToArgb()) return; 
 
             Stack<Point> pixels = new Stack<Point>();
             pixels.Push(pt);
@@ -327,53 +383,74 @@ namespace PaintfromScratch
         private DateTime lastDrawTime = DateTime.MinValue;
         private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {
-            if (isPainting)
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null) return;
+
+            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
+            if (canvasBitmap == null) return;
+
+            if (isPainting && isPushed_Brush) 
             {
-                PictureBox pictureBox = sender as PictureBox;
-                if (pictureBox == null) return;
-
-                Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
-                if (canvasBitmap == null) return;
-
                 using (Graphics g = Graphics.FromImage(canvasBitmap))
                 {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-
-                    using (Pen pen = new Pen(brushColor, Math.Max(brushThickness, 2f)))
+                    using (Pen pen = new Pen(brushColor, brushThickness))
                     {
-                        pen.Alignment = PenAlignment.Center;
-                        if (brushStyle == DashStyle.Dot)
-                        {
-                            pen.DashStyle = DashStyle.Custom;
-                            pen.DashPattern = new float[] { 1, 3 }; 
-                        }
-                        else if (brushStyle == DashStyle.Dash)
-                        {
-                            pen.DashStyle = DashStyle.Custom;
-                            pen.DashPattern = new float[] { 6, 3 }; 
-                        }
-                        else if (brushStyle == DashStyle.DashDot)
-                        {
-                            pen.DashStyle = DashStyle.Custom;
-                            pen.DashPattern = new float[] { 6, 2, 2, 2 };
-                        }
-                        else if (brushStyle == DashStyle.DashDotDot)
-                        {
-                            pen.DashStyle = DashStyle.Custom;
-                            pen.DashPattern = new float[] { 6, 2, 2, 2, 2, 2 };
-                        }
-                        else
-                        {
-                            g.SmoothingMode = SmoothingMode.HighQuality;
-                            pen.DashStyle = DashStyle.Solid;
-                        }
-
                         g.DrawLine(pen, lastPoint, e.Location);
                     }
                 }
+
                 lastPoint = e.Location;
                 pictureBox.Invalidate();
             }
+            else if (isErasing) 
+            {
+                using (Graphics g = Graphics.FromImage(canvasBitmap))
+                {
+                    using (Brush eraserBrush = new SolidBrush(Color.Transparent))
+                    {
+                        float eraserSize = brushThickness;
+                        g.FillEllipse(eraserBrush, e.X - eraserSize / 2, e.Y - eraserSize / 2, eraserSize, eraserSize);
+                    }
+                }
+
+                pictureBox.Invalidate();
+            }
+            else if (isManipulatingShape && selectedShapeForManipulation != null) 
+            {
+                int deltaX = e.X - lastMousePoint.X;
+                int deltaY = e.Y - lastMousePoint.Y;
+
+                if (currentManipulationMode == ManipulationMode.Move)
+                {
+                    selectedShapeForManipulation.Move(deltaX, deltaY);
+                }
+                else if (currentManipulationMode == ManipulationMode.Resize)
+                {
+                    selectedShapeForManipulation.Resize(deltaX, deltaY);
+                }
+
+                lastMousePoint = e.Location;
+
+                RedrawPictureBox(pictureBox);
+                pictureBox.Invalidate();
+            }
+        }
+        private void RedrawPictureBox(PictureBox pictureBox)
+        {
+            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
+            if (canvasBitmap == null) return;
+
+            using (Graphics g = Graphics.FromImage(canvasBitmap))
+            {
+                g.Clear(Color.White);
+
+                foreach (var shape in shapes)
+                {
+                    shape.Draw(g);
+                }
+            }
+
+            pictureBox.Invalidate();
         }
         private void PictureBox_MouseUp(object sender, MouseEventArgs e)
         {
@@ -381,7 +458,11 @@ namespace PaintfromScratch
             {
                 isPainting = false;
             }
-            if (selectedShape != ShapeType.None) // Додаємо фігуру після завершення малювання
+            if (isErasing)
+            {
+                isErasing = false;
+            }
+            if (selectedShape != ShapeType.None) 
             {
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
@@ -397,6 +478,12 @@ namespace PaintfromScratch
                 }
 
                 pictureBox.Invalidate();
+            }
+            if (isManipulatingShape)
+            {
+                selectedShapeForManipulation = null;
+                currentManipulationMode = ManipulationMode.None;
+                Cursor = Cursors.Default;
             }
         }
 
@@ -439,20 +526,16 @@ namespace PaintfromScratch
         {
             using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
-                // Set filter for file types
                 saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
                 saveDialog.Title = "Save Drawing";
 
-                // Set default filename based on the active tab's name
                 saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
 
-                // Show save dialog and proceed if user selects a file location
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
                     PictureBox pictureBox = GetActivePictureBox();
                     if (pictureBox != null && pictureBox.Image != null)
                     {
-                        // Save image in selected format
                         pictureBox.Image.Save(saveDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
                     }
                 }
@@ -470,19 +553,16 @@ namespace PaintfromScratch
 
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
-                    // Call NewButton_Click to create a new TabPage and TabControl if needed
                     NewButton_Click(sender, e);
 
-                    // Get the newly created TabPage and PictureBox
                     TabPage newTabPage = tabControl.SelectedTab;
                     PictureBox pictureBox = newTabPage.Controls.OfType<PictureBox>().FirstOrDefault();
 
-                    // Load the image into the PictureBox
+
                     Bitmap loadedImage = new Bitmap(openDialog.FileName);
                     pictureBox.Image = loadedImage;
-                    pictureBox.Tag = loadedImage; // Store reference for future editing
+                    pictureBox.Tag = loadedImage; 
 
-                    // Set the name of the new TabPage to the file name (without extension)
                     newTabPage.Text = Path.GetFileNameWithoutExtension(openDialog.FileName);
                 }
             }
@@ -492,16 +572,11 @@ namespace PaintfromScratch
 
         private PictureBox GetActivePictureBox()
         {
-            // Get the active TabPage from the TabControl
             TabPage activeTab = tabControl.SelectedTab;
 
-            // Find the PictureBox control on the active TabPage
             PictureBox pictureBox = activeTab?.Controls.OfType<PictureBox>().FirstOrDefault();
 
             return pictureBox;
         }
-
-
-
     }
 }
