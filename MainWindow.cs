@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using PaintfromScratch;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Taskbar;
 namespace PaintfromScratch
 {
     public partial class MainWindow : Form
@@ -22,6 +23,7 @@ namespace PaintfromScratch
         private Point lastPoint;
         private bool isPushed_Brush = false;
         private bool isPushed_Erase = false;
+        private bool isPushed_Background = false;
         private Color brushColor = Color.Black;
         private float brushThickness = 3f;
         private DashStyle brushStyle = DashStyle.Solid;
@@ -30,17 +32,50 @@ namespace PaintfromScratch
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
+            UnclickAllTools(sender);
             BrushButton.BackColor = isPushed_Brush ? Color.LightGreen : Color.Transparent;
         }
         private void EraseButton_Click(object sender, EventArgs e)
         {
+            
             isPushed_Erase = !isPushed_Erase;
+            UnclickAllTools(sender);
             EraseButton.BackColor = isPushed_Erase ? Color.LightGreen : Color.Transparent;
         }
+        private void BackgroundTool_Click(object sender, EventArgs e)
+        {
+            
+            isPushed_Background = !isPushed_Background;
+            UnclickAllTools(sender);
+            BackgroundTool.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
+        }
+        private void UnclickAllTools(object sender)
+        {
+            ToolStripButton[] tools = { BrushButton, EraseButton, BackgroundTool };
+
+            foreach (ToolStripButton tool in tools)
+            {
+                if (tool == sender) continue; 
+                tool.BackColor = Color.Transparent;
+
+                switch (tool)
+                {
+                    case var _ when tool == BrushButton:
+                        isPushed_Brush = false;
+                        break;
+                    case var _ when tool == EraseButton:
+                        isPushed_Erase = false;
+                        break;
+                    case var _ when tool == BackgroundTool:
+                        isPushed_Background = false;
+                        break;
+                }
+            }
+        }
+
 
         private void NewButton_Click(object sender, EventArgs e)
         {
-            // Check if the tabControl already exists, otherwise create it
             var existingTabControl = splitContainer1.Panel2.Controls.OfType<TabControl>().FirstOrDefault();
             if (existingTabControl != null)
             {
@@ -51,19 +86,16 @@ namespace PaintfromScratch
                 tabControl = new TabControl
                 {
                     Dock = DockStyle.Fill,
-                    DrawMode = TabDrawMode.OwnerDrawFixed, // Enable custom drawing
+                    DrawMode = TabDrawMode.OwnerDrawFixed, 
                 };
                 splitContainer1.Panel2.Controls.Add(tabControl);
 
-                // Subscribe to the DrawItem event to draw the close button
                 tabControl.DrawItem += TabControl_DrawItem;
-                tabControl.MouseDown += TabControl_MouseDown; // Handle close button clicks
+                tabControl.MouseDown += TabControl_MouseDown; 
             }
 
-            // Create a new TabPage
             TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
 
-            // Create a PictureBox for the new tab
             PictureBox pictureBox = new PictureBox
             {
                 Dock = DockStyle.Fill,
@@ -78,35 +110,29 @@ namespace PaintfromScratch
             pictureBox.MouseDown += PictureBox_MouseDown;
             pictureBox.MouseMove += PictureBox_MouseMove;
             pictureBox.MouseUp += PictureBox_MouseUp;
-
-            // Add the PictureBox to the new TabPage
+            
             newTabPage.Controls.Add(pictureBox);
 
-            // Add the new TabPage to the TabControl
             tabControl.TabPages.Add(newTabPage);
             tabControl.SelectedTab = newTabPage;
         }
 
-        // Custom draw the tab headers with close buttons
         private void TabControl_DrawItem(object sender, DrawItemEventArgs e)
         {
             TabControl tabControl = (TabControl)sender;
             TabPage tabPage = tabControl.TabPages[e.Index];
             Rectangle tabRect = tabControl.GetTabRect(e.Index);
 
-            // Draw the tab text
             TextRenderer.DrawText(e.Graphics, tabPage.Text, tabControl.Font, tabRect, tabControl.ForeColor, TextFormatFlags.Left);
 
-            // Draw the close button (×) on the tab header
-            int closeButtonSize = 8;
+            int closeButtonSize = 9;
             Rectangle closeButtonRect = new Rectangle(
-                tabRect.Right - closeButtonSize - 1, // Position the button near the right edge
-                tabRect.Top+1, // Center vertically
+                tabRect.Right - closeButtonSize - 1, 
+                tabRect.Top+1, 
                 closeButtonSize,
                 closeButtonSize
             );
 
-            // Draw the close button
             using (Pen pen = new Pen(Color.Black, 2))
             {
                 e.Graphics.DrawLine(pen, closeButtonRect.Left, closeButtonRect.Top, closeButtonRect.Right, closeButtonRect.Bottom);
@@ -269,8 +295,44 @@ namespace PaintfromScratch
                 {
                     startShapePoint = e.Location;
                 }
+                if (isPushed_Background)
+                {
+                    PictureBox pictureBox = sender as PictureBox;
+                    if (pictureBox == null || pictureBox.Image == null) return;
+
+                    Bitmap bmp = (Bitmap)pictureBox.Image;
+                    Color clickedColor = bmp.GetPixel(e.X, e.Y); // Get the color at the clicked point
+                    Color fillColor = brushColor; 
+
+                    FloodFill(bmp, e.Location, clickedColor, fillColor);
+                    pictureBox.Invalidate(); 
+                }
             }
         }
+        private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
+        {
+            if (targetColor.ToArgb() == fillColor.ToArgb()) return; // Avoid infinite loops
+
+            Stack<Point> pixels = new Stack<Point>();
+            pixels.Push(pt);
+
+            while (pixels.Count > 0)
+            {
+                Point temp = pixels.Pop();
+                if (temp.X < 0 || temp.Y < 0 || temp.X >= bmp.Width || temp.Y >= bmp.Height)
+                    continue; // Prevent out-of-bounds errors
+
+                if (bmp.GetPixel(temp.X, temp.Y) == targetColor)
+                {
+                    bmp.SetPixel(temp.X, temp.Y, fillColor);
+                    pixels.Push(new Point(temp.X - 1, temp.Y));
+                    pixels.Push(new Point(temp.X + 1, temp.Y));
+                    pixels.Push(new Point(temp.X, temp.Y - 1));
+                    pixels.Push(new Point(temp.X, temp.Y + 1));
+                }
+            }
+        }
+
         private DateTime lastDrawTime = DateTime.MinValue;
         private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {

@@ -55,6 +55,7 @@ namespace PaintfromScratch
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainWindow));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             NewButton = new ToolStripMenuItem();
@@ -77,7 +78,7 @@ namespace PaintfromScratch
             LineStyleComboBox = new ComboBox();
             BrushButton = new ToolStripButton();
             EraseButton = new ToolStripButton();
-            toolStripButton3 = new ToolStripButton();
+            BackgroundTool = new ToolStripButton();
             toolStripButton4 = new ToolStripButton();
             toolStrip1 = new ToolStrip();
             toolStripDropDownButton1 = new ToolStripDropDownButton();
@@ -116,27 +117,27 @@ namespace PaintfromScratch
             // NewButton
             // 
             NewButton.Name = "NewButton";
-            NewButton.Size = new Size(180, 22);
+            NewButton.Size = new Size(103, 22);
             NewButton.Text = "New";
             NewButton.Click += NewButton_Click;
             // 
             // SaveButton
             // 
             SaveButton.Name = "SaveButton";
-            SaveButton.Size = new Size(180, 22);
+            SaveButton.Size = new Size(103, 22);
             SaveButton.Text = "Save";
             SaveButton.Click += SaveFile_Click;
             // 
             // CloseButton
             // 
             CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(180, 22);
+            CloseButton.Size = new Size(103, 22);
             CloseButton.Text = "Close";
             // 
             // OpenButton
             // 
             OpenButton.Name = "OpenButton";
-            OpenButton.Size = new Size(180, 22);
+            OpenButton.Size = new Size(103, 22);
             OpenButton.Text = "Open";
             OpenButton.Click += OpenFile_Click;
             // 
@@ -291,20 +292,22 @@ namespace PaintfromScratch
             // EraseButton
             // 
             EraseButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            EraseButton.Image = PublicResXFileCodeGenerator.Resources.eraser;
+            EraseButton.Image = (Image)resources.GetObject("EraseButton.Image");
             EraseButton.ImageTransparentColor = Color.Magenta;
             EraseButton.Name = "EraseButton";
             EraseButton.Size = new Size(23, 22);
             EraseButton.Text = "toolStripButton2";
             EraseButton.Click += EraseButton_Click;
             // 
-            // toolStripButton3
+            // BackgroundTool
             // 
-            toolStripButton3.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            toolStripButton3.ImageTransparentColor = Color.Magenta;
-            toolStripButton3.Name = "toolStripButton3";
-            toolStripButton3.Size = new Size(23, 22);
-            toolStripButton3.Text = "toolStripButton3";
+            BackgroundTool.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            BackgroundTool.Image = PublicResXFileCodeGenerator.Resources.bucket;
+            BackgroundTool.ImageTransparentColor = Color.Magenta;
+            BackgroundTool.Name = "BackgroundTool";
+            BackgroundTool.Size = new Size(23, 22);
+            BackgroundTool.Text = "toolStripButton3";
+            BackgroundTool.Click += BackgroundTool_Click;
             // 
             // toolStripButton4
             // 
@@ -316,7 +319,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, toolStripButton3, toolStripButton4, toolStripSeparator1, toolStripButton5 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, toolStripButton4, toolStripSeparator1, toolStripButton5 });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 25);
@@ -402,7 +405,7 @@ namespace PaintfromScratch
         private ToolStripMenuItem OpenButton;
         private ToolStripButton BrushButton;
         private ToolStripButton EraseButton;
-        private ToolStripButton toolStripButton3;
+        private ToolStripButton BackgroundTool;
         private ToolStripButton toolStripButton4;
         private ToolStrip toolStrip1;
         private ToolStripSeparator toolStripSeparator1;
