@@ -43,6 +43,7 @@ namespace PaintfromScratch
             isPushed_Brush = !isPushed_Brush;
             UnclickAllTools(sender);
             BrushButton.BackColor = isPushed_Brush ? Color.LightGreen : Color.Transparent;
+            selectedShape = ShapeType.None;
         }
         private void EraseButton_Click(object sender, EventArgs e)
         {
@@ -50,6 +51,7 @@ namespace PaintfromScratch
             isPushed_Erase = !isPushed_Erase;
             UnclickAllTools(sender);
             EraseButton.BackColor = isPushed_Erase ? Color.LightGreen : Color.Transparent;
+            selectedShape = ShapeType.None;
         }
         private void BackgroundTool_Click(object sender, EventArgs e)
         {
@@ -57,12 +59,14 @@ namespace PaintfromScratch
             isPushed_Background = !isPushed_Background;
             UnclickAllTools(sender);
             BackgroundTool.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
+            selectedShape = ShapeType.None;
         }
         private void ManipulateButton_Click(object sender, EventArgs e)
         {
             isManipulatingShape = !isManipulatingShape;
             UnclickAllTools(sender);
             ManipulateButton.BackColor = isManipulatingShape ? Color.LightGreen : Color.Transparent;
+            selectedShape = ShapeType.None;
         }
         private void UnclickAllTools(object sender)
         {
