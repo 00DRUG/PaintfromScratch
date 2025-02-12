@@ -51,27 +51,30 @@ namespace PaintfromScratch
         }
         private void UnclickAllTools(object sender)
         {
-            ToolStripButton[] tools = { BrushButton, EraseButton, BackgroundTool };
+            object[] tools = { BrushButton, EraseButton, BackgroundTool, rectItem, ellipseItem };
 
-            foreach (ToolStripButton tool in tools)
+            foreach (object tool in tools)
             {
-                if (tool == sender) continue; 
-                tool.BackColor = Color.Transparent;
+                if (tool == sender) continue; // Skip the clicked tool
 
                 switch (tool)
                 {
-                    case var _ when tool == BrushButton:
-                        isPushed_Brush = false;
+                    case ToolStripButton btn:
+                        btn.BackColor = Color.Transparent;
+                        if (btn == BrushButton) isPushed_Brush = false;
+                        if (btn == EraseButton) isPushed_Erase = false;
+                        if (btn == BackgroundTool) isPushed_Background = false;
                         break;
-                    case var _ when tool == EraseButton:
-                        isPushed_Erase = false;
-                        break;
-                    case var _ when tool == BackgroundTool:
-                        isPushed_Background = false;
+
+                    case ToolStripMenuItem menuItem:
+                        menuItem.Checked = false;
                         break;
                 }
             }
+
+            
         }
+
 
 
         private void NewButton_Click(object sender, EventArgs e)
@@ -140,17 +143,14 @@ namespace PaintfromScratch
             }
         }
 
-        // Handle mouse clicks on the tab headers
         private void TabControl_MouseDown(object sender, MouseEventArgs e)
         {
             TabControl tabControl = (TabControl)sender;
 
-            // Check if the click is on a tab header
             for (int i = 0; i < tabControl.TabPages.Count; i++)
             {
                 Rectangle tabRect = tabControl.GetTabRect(i);
 
-                // Calculate the close button area
                 int closeButtonSize = 15;
                 Rectangle closeButtonRect = new Rectangle(
                     tabRect.Right - closeButtonSize - 5,
@@ -159,15 +159,12 @@ namespace PaintfromScratch
                     closeButtonSize
                 );
 
-                // Check if the click is within the close button area
                 if (closeButtonRect.Contains(e.Location))
                 {
-                    // Ask the user if they want to save before closing
                     DialogResult result = MessageBox.Show("Do you want to save this tab before closing?", "Save Tab", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
                     if (result == DialogResult.Yes)
                     {
-                        // Save the image from the PictureBox
                         PictureBox pictureBox = tabControl.TabPages[i].Controls.OfType<PictureBox>().FirstOrDefault();
                         if (pictureBox != null && pictureBox.Image != null)
                         {
@@ -186,11 +183,9 @@ namespace PaintfromScratch
                     }
                     else if (result == DialogResult.No)
                     {
-                        // No save, just close the tab
                         tabControl.TabPages.RemoveAt(i);
                     }
 
-                    // Exit the loop after handling the click
                     break;
                 }
             }
@@ -200,8 +195,7 @@ namespace PaintfromScratch
         {
             ToolStripMenuItem clickedItem = sender as ToolStripMenuItem;
             if (clickedItem == null) return;
-
-            // If the clicked item is already checked, uncheck it and reset shape selection
+            UnclickAllTools(sender);
             if (clickedItem.Checked)
             {
                 clickedItem.Checked = false;
@@ -209,14 +203,11 @@ namespace PaintfromScratch
                 return;
             }
 
-            // Uncheck all shape buttons before checking the new one
             rectItem.Checked = false;
             ellipseItem.Checked = false;
 
-            // Toggle the clicked item to checked
             clickedItem.Checked = true;
 
-            // Set selectedShape based on the checked button
             if (clickedItem == rectItem)
             {
                 selectedShape = ShapeType.Rectangle;
