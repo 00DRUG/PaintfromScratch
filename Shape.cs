@@ -42,8 +42,7 @@ namespace PaintfromScratch
             return Bounds.Contains(point);
         }
 
-        // Check if a point is near the edge of the shape (for resizing)
-        public bool IsNearEdge(Point point, int threshold = 5)
+        public bool IsNearEdge(Point point, int threshold = 3)
         {
             return Math.Abs(point.X - Bounds.Left) < threshold ||
                    Math.Abs(point.X - Bounds.Right) < threshold ||
@@ -61,7 +60,6 @@ namespace PaintfromScratch
                 Bounds.Height);
         }
 
-        // Resize the shape by a delta (offset)
         public void Resize(int deltaX, int deltaY)
         {
             Bounds = new Rectangle(
@@ -72,10 +70,9 @@ namespace PaintfromScratch
         }
         public void DrawBoundingBox(Graphics g)
         {
-            // Draw the bounding rectangle
             using (Pen pen = new Pen(Color.Black, 1))
             {
-                pen.DashStyle = DashStyle.Dash; // Dashed line for the bounding box
+                pen.DashStyle = DashStyle.Dash; 
                 g.DrawRectangle(pen, Bounds);
             }
 

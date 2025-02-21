@@ -5,15 +5,15 @@
     public BrushShape Shape { get; set; } = BrushShape.Circle;
     public int Size { get; set; } = 10;
     public Color Color { get; set; } = Color.Black;
-    public int Spacing { get; set; } = 5; // Default spacing, adjustable by user
+    public int Spacing { get; set; } = 1;
 
     private Point? lastPoint = null;
 
     public void Draw(Graphics g, Point position)
     {
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         using (SolidBrush brush = new SolidBrush(Color))
         {
-            // Draw the shape at the given position with appropriate spacing
             switch (Shape)
             {
                 case BrushShape.Circle:
@@ -39,10 +39,8 @@
 
         if (lastPoint.HasValue)
         {
-            // Calculate the distance between the last point and the current position
             float distance = (float)Math.Sqrt(Math.Pow(position.X - lastPoint.Value.X, 2) + Math.Pow(position.Y - lastPoint.Value.Y, 2));
 
-            // If the distance exceeds the spacing, we draw a new dot
             if (distance >= Spacing)
             {
                 DrawDot(g, position, brush, Size);
@@ -51,33 +49,29 @@
         }
         else
         {
-            // First dot, just draw it
             DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
     }
 
-    // Draw a square with the spacing effect
     private void DrawDottedSquare(Graphics g, Point position, SolidBrush brush)
     {
-        int dotSize = Size / 3;  // Dot size for the square
         if (lastPoint.HasValue)
         {
             float distance = (float)Math.Sqrt(Math.Pow(position.X - lastPoint.Value.X, 2) + Math.Pow(position.Y - lastPoint.Value.Y, 2));
             if (distance >= Spacing)
             {
-                DrawDot(g, position, brush, dotSize);
+                DrawDot(g, position, brush, Size);
                 lastPoint = position;
             }
         }
         else
         {
-            DrawDot(g, position, brush, dotSize);
+            DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
     }
 
-    // Drawing a dot with the current brush size
     private void DrawDot(Graphics g, Point position, SolidBrush brush, int dotSize)
     {
         switch (Shape)
@@ -103,47 +97,42 @@
         }
     }
 
-    // Dotted triangle method (similar to others)
     private void DrawDottedTriangle(Graphics g, Point position, SolidBrush brush)
     {
-        int dotSize = Size / 3;
         if (lastPoint.HasValue)
         {
             float distance = (float)Math.Sqrt(Math.Pow(position.X - lastPoint.Value.X, 2) + Math.Pow(position.Y - lastPoint.Value.Y, 2));
             if (distance >= Spacing)
             {
-                DrawDot(g, position, brush, dotSize);
+                DrawDot(g, position, brush, Size);
                 lastPoint = position;
             }
         }
         else
         {
-            DrawDot(g, position, brush, dotSize);
+            DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
     }
 
-    // Dotted star method (similar to others)
     private void DrawDottedStar(Graphics g, Point position, SolidBrush brush)
     {
-        int dotSize = Size / 3;
         if (lastPoint.HasValue)
         {
             float distance = (float)Math.Sqrt(Math.Pow(position.X - lastPoint.Value.X, 2) + Math.Pow(position.Y - lastPoint.Value.Y, 2));
             if (distance >= Spacing)
             {
-                DrawDot(g, position, brush, dotSize);
+                DrawDot(g, position, brush, Size);
                 lastPoint = position;
             }
         }
         else
         {
-            DrawDot(g, position, brush, dotSize);
+            DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
     }
 
-    // Helper function to generate points for the star
     private PointF[] GetStarPoints(Point center, int size)
     {
         List<PointF> points = new List<PointF>();
