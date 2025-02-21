@@ -32,12 +32,14 @@ namespace PaintfromScratch
         private DashStyle brushStyle = DashStyle.Solid;
         private Point startShapePoint;
         private List<Shape> shapes = new List<Shape>();
-
+        private CustomBrush currentBrush = new CustomBrush();
         private Shape selectedShapeForManipulation = null;
         private bool isManipulatingShape = false;
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
+        bool resizing = false;
+        Point lastMousePosition;
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -99,46 +101,109 @@ namespace PaintfromScratch
 
         private void NewButton_Click(object sender, EventArgs e)
         {
-            var existingTabControl = splitContainer1.Panel2.Controls.OfType<TabControl>().FirstOrDefault();
-            if (existingTabControl != null)
+            using (Form inputForm = new Form())
             {
-                tabControl = existingTabControl;
-            }
-            else
-            {
-                tabControl = new TabControl
+                inputForm.Text = "Enter Canvas Size";
+                inputForm.Size = new Size(250, 180);
+                inputForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                inputForm.StartPosition = FormStartPosition.CenterScreen;
+
+                Label labelWidth = new Label { Text = "Width:", Left = 10, Top = 20, Width = 50 };
+                TextBox inputWidth = new TextBox { Left = 70, Top = 18, Width = 100 };
+
+                Label labelHeight = new Label { Text = "Height:", Left = 10, Top = 50, Width = 50 };
+                TextBox inputHeight = new TextBox { Left = 70, Top = 48, Width = 100 };
+
+                Button okButton = new Button { Text = "OK", Left = 70, Top = 80, Width = 100, DialogResult = DialogResult.OK };
+                inputForm.Controls.Add(labelWidth);
+                inputForm.Controls.Add(inputWidth);
+                inputForm.Controls.Add(labelHeight);
+                inputForm.Controls.Add(inputHeight);
+                inputForm.Controls.Add(okButton);
+                inputForm.AcceptButton = okButton;
+                bool validInput = false;
+                int canvasWidth = 0, canvasHeight = 0;
+                while (!validInput)
                 {
-                    Dock = DockStyle.Fill,
-                    DrawMode = TabDrawMode.OwnerDrawFixed, 
+                    if (inputForm.ShowDialog() != DialogResult.OK)
+                        return;
+
+                    if (!int.TryParse(inputWidth.Text, out canvasWidth) || canvasWidth <= 0)
+                    {
+                        MessageBox.Show("Please enter a valid width.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        continue; 
+                    }
+
+                    if (!int.TryParse(inputHeight.Text, out canvasHeight) || canvasHeight <= 0)
+                    {
+                        MessageBox.Show("Please enter a valid height.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        continue; 
+                    }
+
+                    validInput = true; 
+                }
+
+                var existingTabControl = splitContainer1.Panel2.Controls.OfType<TabControl>().FirstOrDefault();
+                if (existingTabControl != null)
+                {
+                    tabControl = existingTabControl;
+                }
+                else
+                {
+                    tabControl = new TabControl
+                    {
+                        Dock = DockStyle.Fill,
+                        DrawMode = TabDrawMode.OwnerDrawFixed,
+                    };
+                    splitContainer1.Panel2.Controls.Add(tabControl);
+
+                    tabControl.DrawItem += TabControl_DrawItem;
+                    tabControl.MouseDown += TabControl_MouseDown;
+                }
+
+                TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
+
+                PictureBox pictureBox = new PictureBox
+                {
+                    BackColor = Color.White,
+                    SizeMode = PictureBoxSizeMode.AutoSize,
+                    Width = canvasWidth,
+                    Height = canvasHeight
                 };
-                splitContainer1.Panel2.Controls.Add(tabControl);
 
-                tabControl.DrawItem += TabControl_DrawItem;
-                tabControl.MouseDown += TabControl_MouseDown; 
+                Bitmap canvasBitmap = new Bitmap(canvasWidth, canvasHeight);
+                pictureBox.Image = canvasBitmap;
+                pictureBox.Tag = canvasBitmap;
+
+                newTabPage.Resize += (sender, e) => CenterPictureBox(pictureBox, newTabPage);
+
+                pictureBox.MouseDown += PictureBox_MouseDown;
+                pictureBox.MouseMove += PictureBox_MouseMove;
+                pictureBox.MouseUp += PictureBox_MouseUp;
+                pictureBox.Paint += PictureBox_Paint;
+
+                CenterPictureBox(pictureBox, newTabPage);
+
+                newTabPage.Controls.Add(pictureBox);
+                tabControl.TabPages.Add(newTabPage);
+                tabControl.SelectedTab = newTabPage;
+
+                MessageBox.Show(
+                    $"PictureBox Size: {pictureBox.Width}x{pictureBox.Height}\n" +
+                    $"Bitmap Size: {canvasBitmap.Width}x{canvasBitmap.Height}",
+                    "Canvas Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-
-            TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
-
-            PictureBox pictureBox = new PictureBox
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                SizeMode = PictureBoxSizeMode.AutoSize
-            };
-
-            Bitmap canvasBitmap = new Bitmap(tabControl.Width, tabControl.Height);
-            pictureBox.Image = canvasBitmap;
-            pictureBox.Tag = canvasBitmap;
-
-            pictureBox.MouseDown += PictureBox_MouseDown;
-            pictureBox.MouseMove += PictureBox_MouseMove;
-            pictureBox.MouseUp += PictureBox_MouseUp;
-            pictureBox.Paint += PictureBox_Paint;
-            newTabPage.Controls.Add(pictureBox);
-
-            tabControl.TabPages.Add(newTabPage);
-            tabControl.SelectedTab = newTabPage;
         }
+
+        private void CenterPictureBox(PictureBox pictureBox, TabPage tabPage)
+        {
+            pictureBox.Left = (tabPage.ClientSize.Width - pictureBox.Width) / 2;
+            pictureBox.Top = (tabPage.ClientSize.Height - pictureBox.Height) / 2;
+        }
+
+
+
+
 
         private void TabControl_DrawItem(object sender, DrawItemEventArgs e)
         {
@@ -395,15 +460,11 @@ namespace PaintfromScratch
 
             if (isPainting && isPushed_Brush) 
             {
+                currentBrush.Spacing = (int)spacingUpDown.Value;
                 using (Graphics g = Graphics.FromImage(canvasBitmap))
                 {
-                    using (Pen pen = new Pen(brushColor, brushThickness))
-                    {
-                        g.DrawLine(pen, lastPoint, e.Location);
-                    }
+                    currentBrush.Draw(g, e.Location);
                 }
-
-                lastPoint = e.Location;
                 pictureBox.Invalidate();
             }
             else if (isErasing) 
@@ -510,21 +571,25 @@ namespace PaintfromScratch
             brushColor = colorPreview.BackColor;
         }
 
-        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
-        {
-            brushThickness = (float)thicknessNumericUpDown.Value;
-        }
+        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e) {
+            thicknessNumericUpDown.Value = thicknessNumericUpDown.Value;
+            currentBrush.Size = (int)thicknessNumericUpDown.Value;
+            this.Focus();
+        } 
 
         private void LineStyleComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            brushStyle = LineStyleComboBox.SelectedItem.ToString() switch
+            if (LineStyleComboBox.SelectedItem != null)
             {
-                "Dash" => DashStyle.Dash,
-                "Dot" => DashStyle.Dot,
-                "DashDot" => DashStyle.DashDot,
-                "DashDotDot" => DashStyle.DashDotDot,
-                _ => DashStyle.Solid
-            };
+                currentBrush.Shape = LineStyleComboBox.SelectedItem.ToString() switch
+                {
+                    "Circle" => CustomBrush.BrushShape.Circle,
+                    "Square" => CustomBrush.BrushShape.Square,
+                    "Triangle" => CustomBrush.BrushShape.Triangle,
+                    "Star" => CustomBrush.BrushShape.Star,
+                    _ => CustomBrush.BrushShape.Circle  // Default to Circle
+                };
+            }
         }
         private void SaveFile_Click(object sender, EventArgs e)
         {

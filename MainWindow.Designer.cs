@@ -65,6 +65,7 @@ namespace PaintfromScratch
             editToolStripMenuItem = new ToolStripMenuItem();
             viewToolStripMenuItem = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
+            spacingUpDown = new NumericUpDown();
             textBox_R = new TextBox();
             textBox_B = new TextBox();
             textBox_G = new TextBox();
@@ -90,6 +91,7 @@ namespace PaintfromScratch
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)spacingUpDown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)redSwitch).BeginInit();
             ((System.ComponentModel.ISupportInitialize)blueSwitch).BeginInit();
             ((System.ComponentModel.ISupportInitialize)greenSwitch).BeginInit();
@@ -163,6 +165,7 @@ namespace PaintfromScratch
             // 
             // splitContainer1.Panel1
             // 
+            splitContainer1.Panel1.Controls.Add(spacingUpDown);
             splitContainer1.Panel1.Controls.Add(textBox_R);
             splitContainer1.Panel1.Controls.Add(textBox_B);
             splitContainer1.Panel1.Controls.Add(textBox_G);
@@ -177,6 +180,16 @@ namespace PaintfromScratch
             splitContainer1.Size = new Size(766, 488);
             splitContainer1.SplitterDistance = 76;
             splitContainer1.TabIndex = 2;
+            // 
+            // spacingUpDown
+            // 
+            spacingUpDown.Location = new Point(3, 284);
+            spacingUpDown.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            spacingUpDown.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            spacingUpDown.Name = "spacingUpDown";
+            spacingUpDown.Size = new Size(70, 23);
+            spacingUpDown.TabIndex = 9;
+            spacingUpDown.Value = new decimal(new int[] { 2, 0, 0, 0 });
             // 
             // textBox_R
             // 
@@ -259,19 +272,21 @@ namespace PaintfromScratch
             // 
             // thicknessNumericUpDown
             // 
+            thicknessNumericUpDown.ImeMode = ImeMode.Off;
             thicknessNumericUpDown.Location = new Point(3, 32);
-            thicknessNumericUpDown.Maximum = new decimal(new int[] { 20, 0, 0, 0 });
+            thicknessNumericUpDown.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
             thicknessNumericUpDown.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             thicknessNumericUpDown.Name = "thicknessNumericUpDown";
             thicknessNumericUpDown.Size = new Size(70, 23);
             thicknessNumericUpDown.TabIndex = 2;
-            thicknessNumericUpDown.Value = new decimal(new int[] { 3, 0, 0, 0 });
+            thicknessNumericUpDown.TabStop = false;
+            thicknessNumericUpDown.Value = new decimal(new int[] { 10, 0, 0, 0 });
             thicknessNumericUpDown.ValueChanged += ThicknessNumericUpDown_ValueChanged;
             // 
             // LineStyleComboBox
             // 
             LineStyleComboBox.ImeMode = ImeMode.NoControl;
-            LineStyleComboBox.Items.AddRange(new object[] { "Dash", "DashDot", "DashDotDot", "Dot", "Solid" });
+            LineStyleComboBox.Items.AddRange(new object[] { "Circle", "Square", "Star", "Triangle" });
             LineStyleComboBox.Location = new Point(3, 3);
             LineStyleComboBox.Name = "LineStyleComboBox";
             LineStyleComboBox.Size = new Size(70, 23);
@@ -385,6 +400,7 @@ namespace PaintfromScratch
             splitContainer1.Panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)spacingUpDown).EndInit();
             ((System.ComponentModel.ISupportInitialize)redSwitch).EndInit();
             ((System.ComponentModel.ISupportInitialize)blueSwitch).EndInit();
             ((System.ComponentModel.ISupportInitialize)greenSwitch).EndInit();
@@ -425,5 +441,6 @@ namespace PaintfromScratch
         private ToolStripDropDownButton toolStripDropDownButton1;
         private ToolStripMenuItem rectItem;
         private ToolStripMenuItem ellipseItem;
+        private NumericUpDown spacingUpDown;
     }
 }
