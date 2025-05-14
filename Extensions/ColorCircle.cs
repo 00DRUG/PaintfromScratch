@@ -1,11 +1,11 @@
 ﻿public class ColorCircle : Control
 {
-    public event EventHandler<Color> ColorSelected; // Event when color is picked
+    public event EventHandler<Color> ColorSelected; 
 
     public ColorCircle()
     {
-        this.DoubleBuffered = true; // Reduces flickering
-        this.Size = new Size(200, 200); // Default size
+        this.DoubleBuffered = true; 
+        this.Size = new Size(200, 200);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -19,15 +19,12 @@
         int width = this.Width;
         int height = this.Height;
         int radius = Math.Min(width, height) / 2;
-
-        // Create a path to draw the color wheel using FillPie
         Rectangle rect = new Rectangle(0, 0, width, height);
-        for (int i = 0; i < 360; i++) // Iterate through 360 degrees for hue
+        for (int i = 0; i < 360; i++)
         {
-            // Create an inner and outer radial gradient for each segment
             using (Brush brush = new SolidBrush(HsvToRgb(i, 1, 1)))
             {
-                g.FillPie(brush, rect, i, 1); // Draw each color segment
+                g.FillPie(brush, rect, i, 1);
             }
         }
     }
@@ -56,7 +53,7 @@
         int centerY = Height / 2;
         double distance = Math.Sqrt(Math.Pow(e.X - centerX, 2) + Math.Pow(e.Y - centerY, 2));
 
-        if (distance <= centerX) // Inside the circle
+        if (distance <= centerX)
         {
             double angle = Math.Atan2(e.Y - centerY, e.X - centerX) * 180 / Math.PI;
             if (angle < 0) angle += 360;
