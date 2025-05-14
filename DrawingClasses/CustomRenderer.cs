@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Windows.Forms;
-
-public class CustomToolStripRenderer : ToolStripProfessionalRenderer
+﻿public class CustomToolStripRenderer : ToolStripProfessionalRenderer
 {
     protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
     {

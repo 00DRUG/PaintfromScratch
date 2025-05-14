@@ -8,6 +8,10 @@
     public int Spacing { get; set; } = 5; // Default spacing, adjustable by user
 
     private Point? lastPoint = null;
+    public void ResetLastPoint()
+    {
+        lastPoint = null;
+    }
 
     public void Draw(Graphics g, Point position)
     {
@@ -39,23 +43,34 @@
 
         if (lastPoint.HasValue)
         {
-            // Calculate the distance between the last point and the current position
-            float distance = (float)Math.Sqrt(Math.Pow(position.X - lastPoint.Value.X, 2) + Math.Pow(position.Y - lastPoint.Value.Y, 2));
+            Point prev = lastPoint.Value;
+            float dx = position.X - prev.X;
+            float dy = position.Y - prev.Y;
+            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
 
-            // If the distance exceeds the spacing, we draw a new dot
             if (distance >= Spacing)
             {
-                DrawDot(g, position, brush, Size);
+                int steps = (int)(distance / Spacing);
+                for (int i = 1; i <= steps; i++)
+                {
+                    float t = (float)i / steps;
+                    int x = (int)(prev.X + t * dx);
+                    int y = (int)(prev.Y + t * dy);
+                    DrawDot(g, new Point(x, y), brush, Size);
+                }
+
                 lastPoint = position;
             }
         }
         else
         {
-            // First dot, just draw it
             DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
+        Console.WriteLine($"lastPoint = {lastPoint}, current = {position}");
+
     }
+
 
     // Draw a square with the spacing effect
     private void DrawDottedSquare(Graphics g, Point position, SolidBrush brush)

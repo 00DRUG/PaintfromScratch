@@ -1,10 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Windows.Forms;
-using PaintfromScratch;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Taskbar;
+﻿using PaintfromScratch.FiguresClasses;
 namespace PaintfromScratch
 {
 
@@ -23,23 +17,20 @@ namespace PaintfromScratch
         private ShapeType selectedShape = ShapeType.None;
         private bool isPainting = false;
         private bool isErasing = false;
-        private Point lastPoint;
+        private Point? lastPoint;
         private bool isPushed_Brush = false;
         private bool isPushed_Erase = false;
         private bool isPushed_Background = false;
         private Color brushColor = Color.Black;
         private float brushThickness = 3f;
-        private DashStyle brushStyle = DashStyle.Solid;
         private Point startShapePoint;
         private List<Shape> shapes = new List<Shape>();
         private CustomBrush currentBrush = new CustomBrush();
-        private Shape selectedShapeForManipulation = null;
+        private Shape? selectedShapeForManipulation = null;
         private bool isManipulatingShape = false;
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
-        bool resizing = false;
-        Point lastMousePosition;
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -49,7 +40,7 @@ namespace PaintfromScratch
         }
         private void EraseButton_Click(object sender, EventArgs e)
         {
-            
+
             isPushed_Erase = !isPushed_Erase;
             UnclickAllTools(sender);
             EraseButton.BackColor = isPushed_Erase ? Color.LightGreen : Color.Transparent;
@@ -57,7 +48,7 @@ namespace PaintfromScratch
         }
         private void BackgroundTool_Click(object sender, EventArgs e)
         {
-            
+
             isPushed_Background = !isPushed_Background;
             UnclickAllTools(sender);
             BackgroundTool.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
@@ -72,7 +63,7 @@ namespace PaintfromScratch
         }
         private void UnclickAllTools(object sender)
         {
-            object[] tools = { BrushButton, EraseButton, BackgroundTool,ManipulateButton, rectItem, ellipseItem };
+            object[] tools = { BrushButton, EraseButton, BackgroundTool, ManipulateButton, rectItem, ellipseItem };
 
             foreach (object tool in tools)
             {
@@ -94,7 +85,7 @@ namespace PaintfromScratch
                 }
             }
 
-            
+
         }
 
 
@@ -131,16 +122,16 @@ namespace PaintfromScratch
                     if (!int.TryParse(inputWidth.Text, out canvasWidth) || canvasWidth <= 0)
                     {
                         MessageBox.Show("Please enter a valid width.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        continue; 
+                        continue;
                     }
 
                     if (!int.TryParse(inputHeight.Text, out canvasHeight) || canvasHeight <= 0)
                     {
                         MessageBox.Show("Please enter a valid height.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        continue; 
+                        continue;
                     }
 
-                    validInput = true; 
+                    validInput = true;
                 }
 
                 var existingTabControl = splitContainer1.Panel2.Controls.OfType<TabControl>().FirstOrDefault();
@@ -215,8 +206,8 @@ namespace PaintfromScratch
 
             int closeButtonSize = 9;
             Rectangle closeButtonRect = new Rectangle(
-                tabRect.Right - closeButtonSize - 1, 
-                tabRect.Top+1, 
+                tabRect.Right - closeButtonSize - 1,
+                tabRect.Top + 1,
                 closeButtonSize,
                 closeButtonSize
             );
@@ -337,7 +328,7 @@ namespace PaintfromScratch
 
                         if (!string.IsNullOrEmpty(newTabName))
                         {
-                           selectedTab.Text = newTabName;
+                            selectedTab.Text = newTabName;
                         }
                     }
                 };
@@ -356,7 +347,7 @@ namespace PaintfromScratch
             {
                 shape.Draw(e.Graphics);
             }
-   
+
             if (selectedShapeForManipulation != null)
             {
                 selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
@@ -367,21 +358,21 @@ namespace PaintfromScratch
         {
             if (e.Button == MouseButtons.Left)
             {
-                if (isPushed_Brush) 
+                if (isPushed_Brush)
                 {
                     isPainting = true;
-                    lastPoint = e.Location;
+                    currentBrush.ResetLastPoint();
                 }
                 else if (isPushed_Erase)
                 {
                     isErasing = true;
-                    lastPoint = e.Location;
+                    lastPoint = null;
                 }
-                else if (selectedShape != ShapeType.None) 
+                else if (selectedShape != ShapeType.None)
                 {
                     startShapePoint = e.Location;
                 }
-                else if (isPushed_Background) 
+                else if (isPushed_Background)
                 {
                     PictureBox pictureBox = sender as PictureBox;
                     if (pictureBox == null || pictureBox.Image == null) return;
@@ -393,7 +384,7 @@ namespace PaintfromScratch
                     FloodFill(bmp, e.Location, clickedColor, fillColor);
                     pictureBox.Invalidate();
                 }
-                else if (isManipulatingShape) 
+                else if (isManipulatingShape)
                 {
                     selectedShapeForManipulation = shapes.FirstOrDefault(shape => shape.Contains(e.Location));
                     if (selectedShapeForManipulation != null)
@@ -416,10 +407,9 @@ namespace PaintfromScratch
         }
         private bool IsNearResizeHandle(Shape shape, Point point)
         {
-            int handleSize = 8; 
+            int handleSize = 8;
             Rectangle bounds = shape.Bounds;
 
-            // Point near handles
             return (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-left
                    (Math.Abs(point.X - bounds.Right) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-right
                    (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Bottom) < handleSize) || // Bottom-left
@@ -427,7 +417,7 @@ namespace PaintfromScratch
         }
         private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
         {
-            if (targetColor.ToArgb() == fillColor.ToArgb()) return; 
+            if (targetColor.ToArgb() == fillColor.ToArgb()) return;
 
             Stack<Point> pixels = new Stack<Point>();
             pixels.Push(pt);
@@ -449,7 +439,6 @@ namespace PaintfromScratch
             }
         }
 
-        private DateTime lastDrawTime = DateTime.MinValue;
         private void PictureBox_MouseMove(object sender, MouseEventArgs e)
         {
             PictureBox pictureBox = sender as PictureBox;
@@ -458,7 +447,7 @@ namespace PaintfromScratch
             Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
             if (canvasBitmap == null) return;
 
-            if (isPainting && isPushed_Brush) 
+            if (isPainting && isPushed_Brush)
             {
                 currentBrush.Spacing = (int)spacingUpDown.Value;
                 using (Graphics g = Graphics.FromImage(canvasBitmap))
@@ -467,7 +456,7 @@ namespace PaintfromScratch
                 }
                 pictureBox.Invalidate();
             }
-            else if (isErasing) 
+            else if (isErasing)
             {
                 using (Graphics g = Graphics.FromImage(canvasBitmap))
                 {
@@ -480,7 +469,7 @@ namespace PaintfromScratch
 
                 pictureBox.Invalidate();
             }
-            else if (isManipulatingShape && selectedShapeForManipulation != null) 
+            else if (isManipulatingShape && selectedShapeForManipulation != null)
             {
                 int deltaX = e.X - lastMousePoint.X;
                 int deltaY = e.Y - lastMousePoint.Y;
@@ -522,12 +511,14 @@ namespace PaintfromScratch
             if (isPainting)
             {
                 isPainting = false;
+                lastPoint = null;
             }
             if (isErasing)
             {
                 isErasing = false;
+                lastPoint = null;
             }
-            if (selectedShape != ShapeType.None) 
+            if (selectedShape != ShapeType.None)
             {
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
@@ -571,11 +562,12 @@ namespace PaintfromScratch
             brushColor = colorPreview.BackColor;
         }
 
-        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e) {
+        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
+        {
             thicknessNumericUpDown.Value = thicknessNumericUpDown.Value;
             currentBrush.Size = (int)thicknessNumericUpDown.Value;
             this.Focus();
-        } 
+        }
 
         private void LineStyleComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -630,7 +622,7 @@ namespace PaintfromScratch
 
                     Bitmap loadedImage = new Bitmap(openDialog.FileName);
                     pictureBox.Image = loadedImage;
-                    pictureBox.Tag = loadedImage; 
+                    pictureBox.Tag = loadedImage;
 
                     newTabPage.Text = Path.GetFileNameWithoutExtension(openDialog.FileName);
                 }

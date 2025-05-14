@@ -1,7 +1,4 @@
-﻿using System;
-using System.Drawing;
-
-namespace PaintfromScratch
+﻿namespace PaintfromScratch.FiguresClasses
 {
     public static class ShapeFactory
     {

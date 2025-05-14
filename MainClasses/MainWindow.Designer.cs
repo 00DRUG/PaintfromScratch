@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using PaintfromScratch.FiguresClasses;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace PaintfromScratch
