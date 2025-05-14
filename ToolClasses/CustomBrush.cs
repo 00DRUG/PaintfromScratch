@@ -5,7 +5,7 @@
     public BrushShape Shape { get; set; } = BrushShape.Circle;
     public int Size { get; set; } = 10;
     public Color Color { get; set; } = Color.Black;
-    public int Spacing { get; set; } = 5; // Default spacing, adjustable by user
+    public int Spacing { get; set; } = 5;
 
     private Point? lastPoint = null;
     public void ResetLastPoint()
@@ -16,8 +16,7 @@
     public void Draw(Graphics g, Point position)
     {
         using (SolidBrush brush = new SolidBrush(Color))
-        {
-            // Draw the shape at the given position with appropriate spacing
+        { 
             switch (Shape)
             {
                 case BrushShape.Circle:
@@ -39,7 +38,7 @@
     // Draw a circle with the spacing effect
     private void DrawDottedCircle(Graphics g, Point position, SolidBrush brush)
     {
-        int radius = Size / 2;
+        float radius = Size / 2;
 
         if (lastPoint.HasValue)
         {
@@ -67,7 +66,6 @@
             DrawDot(g, position, brush, Size);
             lastPoint = position;
         }
-        Console.WriteLine($"lastPoint = {lastPoint}, current = {position}");
 
     }
 

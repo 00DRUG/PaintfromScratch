@@ -1,4 +1,6 @@
-﻿using PaintfromScratch.FiguresClasses;
+﻿using PaintfromScratch.DrawingClasses;
+using PaintfromScratch.FiguresClasses;
+using System.Windows.Forms;
 namespace PaintfromScratch
 {
 
@@ -26,11 +28,14 @@ namespace PaintfromScratch
         private Point startShapePoint;
         private List<Shape> shapes = new List<Shape>();
         private CustomBrush currentBrush = new CustomBrush();
+        private EraserTool eraser = new EraserTool();
         private Shape? selectedShapeForManipulation = null;
         private bool isManipulatingShape = false;
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
+       
+         
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -84,11 +89,7 @@ namespace PaintfromScratch
                         break;
                 }
             }
-
-
         }
-
-
 
         private void NewButton_Click(object sender, EventArgs e)
         {
@@ -156,7 +157,7 @@ namespace PaintfromScratch
 
                 PictureBox pictureBox = new PictureBox
                 {
-                    BackColor = Color.White,
+                    BackColor = Color.Transparent,
                     SizeMode = PictureBoxSizeMode.AutoSize,
                     Width = canvasWidth,
                     Height = canvasHeight
@@ -193,7 +194,41 @@ namespace PaintfromScratch
         }
 
 
+        private void PictureBox_Paint(object sender, PaintEventArgs e)
+        {
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null) return;
+            DrawCheckerboard(e.Graphics, pictureBox.ClientRectangle);
+            if (pictureBox.Image != null)
+            {
+                e.Graphics.DrawImage(pictureBox.Image, 0, 0);
+            }
+            foreach (var shape in shapes)
+            {
+                shape.Draw(e.Graphics);
+            }
 
+            if (selectedShapeForManipulation != null)
+            {
+                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
+            }
+        }
+        private void DrawCheckerboard(Graphics g, Rectangle area, int tileSize = 10)
+        {
+            using (Brush lightBrush = new SolidBrush(Color.LightGray))
+            using (Brush darkBrush = new SolidBrush(Color.White))
+            {
+                for (int y = 0; y < area.Height; y += tileSize)
+                {
+                    for (int x = 0; x < area.Width; x += tileSize)
+                    {
+                        bool isLight = ((x / tileSize) + (y / tileSize)) % 2 == 0;
+                        Brush brush = isLight ? lightBrush : darkBrush;
+                        g.FillRectangle(brush, x, y, tileSize, tileSize);
+                    }
+                }
+            }
+        }
 
 
         private void TabControl_DrawItem(object sender, DrawItemEventArgs e)
@@ -338,24 +373,14 @@ namespace PaintfromScratch
             }
         }
 
-        private void PictureBox_Paint(object sender, PaintEventArgs e)
-        {
-            PictureBox pictureBox = sender as PictureBox;
-            if (pictureBox == null) return;
-
-            foreach (var shape in shapes)
-            {
-                shape.Draw(e.Graphics);
-            }
-
-            if (selectedShapeForManipulation != null)
-            {
-                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
-            }
-        }
+        
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null || pictureBox.Image == null) return;
+
+            Bitmap bmp = (Bitmap)pictureBox.Image;
             if (e.Button == MouseButtons.Left)
             {
                 if (isPushed_Brush)
@@ -366,7 +391,11 @@ namespace PaintfromScratch
                 else if (isPushed_Erase)
                 {
                     isErasing = true;
-                    lastPoint = null;
+                    if (pictureBox.Tag is Bitmap canvas)
+                    {
+                        eraser.Erase(canvas, e.Location);
+                        pictureBox.Invalidate(); 
+                    }
                 }
                 else if (selectedShape != ShapeType.None)
                 {
@@ -374,10 +403,7 @@ namespace PaintfromScratch
                 }
                 else if (isPushed_Background)
                 {
-                    PictureBox pictureBox = sender as PictureBox;
-                    if (pictureBox == null || pictureBox.Image == null) return;
 
-                    Bitmap bmp = (Bitmap)pictureBox.Image;
                     Color clickedColor = bmp.GetPixel(e.X, e.Y);
                     Color fillColor = brushColor;
 
@@ -426,7 +452,7 @@ namespace PaintfromScratch
             {
                 Point temp = pixels.Pop();
                 if (temp.X < 0 || temp.Y < 0 || temp.X >= bmp.Width || temp.Y >= bmp.Height)
-                    continue; // Prevent out-of-bounds errors
+                    continue; 
 
                 if (bmp.GetPixel(temp.X, temp.Y) == targetColor)
                 {
@@ -456,18 +482,14 @@ namespace PaintfromScratch
                 }
                 pictureBox.Invalidate();
             }
-            else if (isErasing)
+            else if (isErasing && isPushed_Erase)
             {
-                using (Graphics g = Graphics.FromImage(canvasBitmap))
+                eraser.Size = (int)thicknessNumericUpDown.Value;
+                if (pictureBox.Tag is Bitmap canvas)
                 {
-                    using (Brush eraserBrush = new SolidBrush(Color.Transparent))
-                    {
-                        float eraserSize = brushThickness;
-                        g.FillEllipse(eraserBrush, e.X - eraserSize / 2, e.Y - eraserSize / 2, eraserSize, eraserSize);
-                    }
+                    eraser.Erase(canvas, e.Location);
+                    pictureBox.Invalidate(); 
                 }
-
-                pictureBox.Invalidate();
             }
             else if (isManipulatingShape && selectedShapeForManipulation != null)
             {
@@ -511,12 +533,12 @@ namespace PaintfromScratch
             if (isPainting)
             {
                 isPainting = false;
-                lastPoint = null;
+                currentBrush.ResetLastPoint();
             }
             if (isErasing)
             {
                 isErasing = false;
-                lastPoint = null;
+                eraser.ResetLastPoint();    
             }
             if (selectedShape != ShapeType.None)
             {
