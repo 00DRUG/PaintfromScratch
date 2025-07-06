@@ -124,8 +124,6 @@
         }
     }
 
-
-    // Dotted star method (similar to others)
     private void DrawDottedStar(Graphics g, Point position, SolidBrush brush)
     {
         int dotSize = Size ;
@@ -180,10 +178,7 @@
                 break;
         }
     }
-
-    // Dotted triangle method (similar to others)
-    
-
+   
     // Helper function to generate points for the star
     private PointF[] GetStarPoints(Point center, int size)
     {
