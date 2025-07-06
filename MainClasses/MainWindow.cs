@@ -1,5 +1,6 @@
 ﻿using PaintfromScratch.DrawingClasses;
 using PaintfromScratch.FiguresClasses;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 namespace PaintfromScratch
 {
@@ -208,11 +209,19 @@ namespace PaintfromScratch
             {
                 shape.Draw(e.Graphics);
             }
-
-            if (selectedShapeForManipulation != null)
+            if (previewShape != null)
             {
-                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
+                using Pen p = new Pen(previewShape.Color, previewShape.Thickness)
+                {
+                    DashStyle = DashStyle.Dash
+                };
+                if (previewShape.Type == ShapeType.Rectangle)
+                    e.Graphics.DrawRectangle(p, previewShape.Bounds);
+                else
+                    e.Graphics.DrawEllipse(p, previewShape.Bounds);
             }
+            if (isManipulatingShape && selectedShapeForManipulation != null)
+                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
         }
         private void DrawCheckerboard(Graphics g, Rectangle area, int tileSize = 10)
         {
@@ -407,10 +416,17 @@ namespace PaintfromScratch
                         pictureBox.Invalidate(); 
                     }
                 }
-                else if (selectedShape != ShapeType.None)
+                if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
                 {
                     startShapePoint = e.Location;
+                    previewShape = ShapeFactory.CreateShape(selectedShape,
+                                                            startShapePoint,
+                                                            startShapePoint,    
+                                                            brushColor,
+                                                            brushThickness);
+                    pictureBox.Invalidate();              
                 }
+
                 else if (isPushed_Background)
                 {
 
@@ -488,16 +504,14 @@ namespace PaintfromScratch
             }
             else if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
             {
-           
-                previewShape = ShapeFactory.CreateShape(selectedShape, startShapePoint, e.Location, brushColor, brushThickness);
-
-                RedrawPictureBox(pictureBox);
-
-                using (Graphics g = pictureBox.CreateGraphics())
+                if (previewShape != null)
                 {
-                    previewShape?.Draw(g); 
+                    previewShape.Resize(e.Location.X - previewShape.Bounds.Right,
+                                        e.Location.Y - previewShape.Bounds.Bottom);
+                    pictureBox.Invalidate();           
                 }
             }
+
 
         }
         private bool IsNearResizeHandle(Shape shape, Point point)
@@ -534,24 +548,32 @@ namespace PaintfromScratch
             }
         }
 
-        
+
         private void RedrawPictureBox(PictureBox pictureBox)
         {
-            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
-            if (canvasBitmap == null) return;
-
-            using (Graphics g = Graphics.FromImage(canvasBitmap))
+            if (pictureBox.Tag is Bitmap canvasBitmap)
             {
-                g.Clear(Color.White);
+             
+                Bitmap tempBitmap = new Bitmap(canvasBitmap);
 
-                foreach (var shape in shapes)
+                using (Graphics g = Graphics.FromImage(tempBitmap))
                 {
-                    shape.Draw(g);
-                }
-            }
+                    foreach (var shape in shapes)
+                    {
+                        shape.Draw(g);
+                    }
 
-            pictureBox.Invalidate();
+                    if (previewShape != null)
+                    {
+                        previewShape.Draw(g); 
+                    }
+                }
+
+                pictureBox.Image = tempBitmap;
+                pictureBox.Tag = tempBitmap; 
+            }
         }
+
         private void PictureBox_MouseUp(object sender, MouseEventArgs e)
         {
             if (isPainting)
@@ -564,22 +586,14 @@ namespace PaintfromScratch
                 isErasing = false;
                 eraser.ResetLastPoint();    
             }
-            if (selectedShape != ShapeType.None)
+            if (selectedShape != ShapeType.None && previewShape != null)
             {
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
-
-                Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
-                if (canvasBitmap == null) return;
-
-                using (Graphics g = Graphics.FromImage(canvasBitmap))
-                {
-                    Shape shape = ShapeFactory.CreateShape(selectedShape, startShapePoint, e.Location, brushColor, brushThickness);
-                    shapes.Add(shape);
-                    shape.Draw(g);
-                }
-
+                shapes.Add(previewShape);  
+                previewShape = null;       
                 pictureBox.Invalidate();
+
             }
             if (isManipulatingShape)
             {
