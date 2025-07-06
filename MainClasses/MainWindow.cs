@@ -153,6 +153,7 @@ namespace PaintfromScratch
 
                     tabControl.DrawItem += TabControl_DrawItem;
                     tabControl.MouseDown += TabControl_MouseDown;
+                    tabControl.MouseUp += TabControl_MouseUp;
                 }
 
                 TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
