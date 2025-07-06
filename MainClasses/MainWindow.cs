@@ -12,7 +12,7 @@ namespace PaintfromScratch
             InitializeComponent();
             CustomParameters();
         }
-        private TabControl tabControl;
+        private TabControl? tabControl;
 
         private ColorCircle colorCircle;
         private PictureBox colorPreview;
@@ -34,8 +34,9 @@ namespace PaintfromScratch
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
-       
-         
+        private Shape? previewShape = null; //for the preview of the shape being drawn
+
+
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -387,6 +388,15 @@ namespace PaintfromScratch
                 {
                     isPainting = true;
                     currentBrush.ResetLastPoint();
+                    Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
+                    if (canvasBitmap != null)
+                    {
+                        using (Graphics g = Graphics.FromImage(canvasBitmap))
+                        {
+                            currentBrush.Draw(g, e.Location); 
+                        }
+                        pictureBox.Invalidate();
+                    }
                 }
                 else if (isPushed_Erase)
                 {
@@ -431,6 +441,65 @@ namespace PaintfromScratch
                 }
             }
         }
+        private void PictureBox_MouseMove(object sender, MouseEventArgs e)
+        {
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null) return;
+
+            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
+            if (canvasBitmap == null) return;
+
+            if (isPainting && isPushed_Brush)
+            {
+                currentBrush.Spacing = (int)spacingUpDown.Value;
+                using (Graphics g = Graphics.FromImage(canvasBitmap))
+                {
+                    currentBrush.Draw(g, e.Location);
+                }
+                pictureBox.Invalidate();
+            }
+            else if (isErasing && isPushed_Erase)
+            {
+                eraser.Size = (int)thicknessNumericUpDown.Value;
+                if (pictureBox.Tag is Bitmap canvas)
+                {
+                    eraser.Erase(canvas, e.Location);
+                    pictureBox.Invalidate();
+                }
+            }
+            else if (isManipulatingShape && selectedShapeForManipulation != null)
+            {
+                int deltaX = e.X - lastMousePoint.X;
+                int deltaY = e.Y - lastMousePoint.Y;
+
+                if (currentManipulationMode == ManipulationMode.Move)
+                {
+                    selectedShapeForManipulation.Move(deltaX, deltaY);
+                }
+                else if (currentManipulationMode == ManipulationMode.Resize)
+                {
+                    selectedShapeForManipulation.Resize(deltaX, deltaY);
+                }
+
+                lastMousePoint = e.Location;
+
+                RedrawPictureBox(pictureBox);
+                pictureBox.Invalidate();
+            }
+            else if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
+            {
+           
+                previewShape = ShapeFactory.CreateShape(selectedShape, startShapePoint, e.Location, brushColor, brushThickness);
+
+                RedrawPictureBox(pictureBox);
+
+                using (Graphics g = pictureBox.CreateGraphics())
+                {
+                    previewShape?.Draw(g); 
+                }
+            }
+
+        }
         private bool IsNearResizeHandle(Shape shape, Point point)
         {
             int handleSize = 8;
@@ -465,52 +534,7 @@ namespace PaintfromScratch
             }
         }
 
-        private void PictureBox_MouseMove(object sender, MouseEventArgs e)
-        {
-            PictureBox pictureBox = sender as PictureBox;
-            if (pictureBox == null) return;
-
-            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
-            if (canvasBitmap == null) return;
-
-            if (isPainting && isPushed_Brush)
-            {
-                currentBrush.Spacing = (int)spacingUpDown.Value;
-                using (Graphics g = Graphics.FromImage(canvasBitmap))
-                {
-                    currentBrush.Draw(g, e.Location);
-                }
-                pictureBox.Invalidate();
-            }
-            else if (isErasing && isPushed_Erase)
-            {
-                eraser.Size = (int)thicknessNumericUpDown.Value;
-                if (pictureBox.Tag is Bitmap canvas)
-                {
-                    eraser.Erase(canvas, e.Location);
-                    pictureBox.Invalidate(); 
-                }
-            }
-            else if (isManipulatingShape && selectedShapeForManipulation != null)
-            {
-                int deltaX = e.X - lastMousePoint.X;
-                int deltaY = e.Y - lastMousePoint.Y;
-
-                if (currentManipulationMode == ManipulationMode.Move)
-                {
-                    selectedShapeForManipulation.Move(deltaX, deltaY);
-                }
-                else if (currentManipulationMode == ManipulationMode.Resize)
-                {
-                    selectedShapeForManipulation.Resize(deltaX, deltaY);
-                }
-
-                lastMousePoint = e.Location;
-
-                RedrawPictureBox(pictureBox);
-                pictureBox.Invalidate();
-            }
-        }
+        
         private void RedrawPictureBox(PictureBox pictureBox)
         {
             Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
@@ -611,8 +635,15 @@ namespace PaintfromScratch
             {
                 saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
                 saveDialog.Title = "Save Drawing";
-
-                saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
+                 if (tabControl.TabCount != 0 || tabControl is not null )
+                {
+                    saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
+                }
+                else
+                {
+                    MessageBox.Show(
+                   "You have 0 files active!");
+                }
 
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {

@@ -39,31 +39,28 @@
     private void DrawDottedCircle(Graphics g, Point position, SolidBrush brush)
     {
         float radius = Size / 2;
-
-        if (lastPoint.HasValue)
-        {
-            Point prev = lastPoint.Value;
-            float dx = position.X - prev.X;
-            float dy = position.Y - prev.Y;
-            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
-
-            if (distance >= Spacing)
-            {
-                int steps = (int)(distance / Spacing);
-                for (int i = 1; i <= steps; i++)
-                {
-                    float t = (float)i / steps;
-                    int x = (int)(prev.X + t * dx);
-                    int y = (int)(prev.Y + t * dy);
-                    DrawDot(g, new Point(x, y), brush, Size);
-                }
-
-                lastPoint = position;
-            }
-        }
-        else
+        if (!lastPoint.HasValue)
         {
             DrawDot(g, position, brush, Size);
+            lastPoint = position;
+            return;
+        }
+        Point prev = lastPoint.Value;
+        float dx = position.X - prev.X;
+        float dy = position.Y - prev.Y;
+        float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+
+        if (distance >= Spacing)
+        {
+            int steps = (int)(distance / Spacing);
+            for (int i = 1; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                int x = (int)(prev.X + t * dx);
+                int y = (int)(prev.Y + t * dy);
+                DrawDot(g, new Point(x, y), brush, Size);
+            }
+
             lastPoint = position;
         }
 
