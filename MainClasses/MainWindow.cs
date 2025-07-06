@@ -454,6 +454,14 @@ namespace PaintfromScratch
                             Cursor = Cursors.SizeAll;
                         }
                     }
+                    else
+                    {
+                        // If no shape is selected, reset manipulation state (clickind outside the shape)
+                        selectedShapeForManipulation = null;
+                        currentManipulationMode = ManipulationMode.None;
+                        Cursor = Cursors.Default;
+                        pictureBox.Invalidate(); 
+                    }
                 }
             }
         }
