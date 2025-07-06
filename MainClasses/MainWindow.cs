@@ -523,7 +523,7 @@ namespace PaintfromScratch
         }
         private bool IsNearResizeHandle(Shape shape, Point point)
         {
-            int handleSize = 8;
+            int handleSize = 20;
             Rectangle bounds = shape.Bounds;
 
             return (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-left
