@@ -65,8 +65,6 @@
         }
 
     }
-
-
     // Draw a square with the spacing effect
     private void DrawDottedSquare(Graphics g, Point position, SolidBrush brush)
     {

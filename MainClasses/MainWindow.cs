@@ -499,7 +499,6 @@ namespace PaintfromScratch
 
                 lastMousePoint = e.Location;
 
-                RedrawPictureBox(pictureBox);
                 pictureBox.Invalidate();
             }
             else if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
@@ -662,10 +661,21 @@ namespace PaintfromScratch
                 if (saveDialog.ShowDialog() == DialogResult.OK)
                 {
                     PictureBox pictureBox = GetActivePictureBox();
-                    if (pictureBox != null && pictureBox.Image != null)
+                    Bitmap bitmapToSave = new Bitmap(pictureBox.Image.Width, pictureBox.Image.Height);
+
+                    using (Graphics g = Graphics.FromImage(bitmapToSave))
                     {
-                        pictureBox.Image.Save(saveDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                        // 1. Draw the existing canvas
+                        g.DrawImageUnscaled((Bitmap)pictureBox.Image, 0, 0);
+
+                        // 2. Draw all shapes
+                        foreach (var shape in shapes)
+                            shape.Draw(g);
                     }
+
+                    bitmapToSave.Save(saveDialog.FileName);
                 }
             }
         }
