@@ -791,7 +791,7 @@ namespace PaintfromScratch
             {
                 g.Clear(Color.Transparent); 
             }
-
+            GetCurrentShapes().Clear(); 
             pictureBox.Image = newBitmap;
             pictureBox.Tag = newBitmap;
 
