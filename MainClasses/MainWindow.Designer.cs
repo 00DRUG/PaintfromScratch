@@ -75,7 +75,6 @@ namespace PaintfromScratch
             colorCircle = new ColorCircle();
             thicknessNumericUpDown = new NumericUpDown();
             LineStyleComboBox = new ComboBox();
-            historyPanel = new Panel();
             BrushButton = new ToolStripButton();
             EraseButton = new ToolStripButton();
             BackgroundTool = new ToolStripButton();
@@ -85,7 +84,8 @@ namespace PaintfromScratch
             rectItem = new ToolStripMenuItem();
             ellipseItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
-            toolStripButton5 = new ToolStripButton();
+            CleanButton = new ToolStripButton();
+            historyPanel = new Panel();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -276,15 +276,6 @@ namespace PaintfromScratch
             LineStyleComboBox.TabIndex = 1;
             LineStyleComboBox.SelectedIndexChanged += LineStyleComboBox_SelectedIndexChanged;
             // 
-            // historyPanel
-            // 
-            historyPanel.AutoScroll = true;
-            historyPanel.BorderStyle = BorderStyle.FixedSingle;
-            historyPanel.Location = new Point(601, 3);
-            historyPanel.Name = "historyPanel";
-            historyPanel.Size = new Size(85, 485);
-            historyPanel.TabIndex = 0;
-            // 
             // BrushButton
             // 
             BrushButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
@@ -328,7 +319,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, ManipulateButton, toolStripSeparator1, toolStripButton5 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, ManipulateButton, toolStripSeparator1, CleanButton });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 25);
@@ -366,13 +357,24 @@ namespace PaintfromScratch
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(6, 25);
             // 
-            // toolStripButton5
+            // CleanButton
             // 
-            toolStripButton5.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            toolStripButton5.ImageTransparentColor = Color.Magenta;
-            toolStripButton5.Name = "toolStripButton5";
-            toolStripButton5.Size = new Size(23, 22);
-            toolStripButton5.Text = "toolStripButton5";
+            CleanButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            CleanButton.Image = PublicResXFileCodeGenerator.Resources.clean3_com;
+            CleanButton.ImageTransparentColor = Color.Magenta;
+            CleanButton.Name = "CleanButton";
+            CleanButton.Size = new Size(23, 22);
+            CleanButton.Text = "CleanButton";
+            CleanButton.Click += CleanButton_Click;
+            // 
+            // historyPanel
+            // 
+            historyPanel.AutoScroll = true;
+            historyPanel.BorderStyle = BorderStyle.FixedSingle;
+            historyPanel.Location = new Point(601, 3);
+            historyPanel.Name = "historyPanel";
+            historyPanel.Size = new Size(85, 485);
+            historyPanel.TabIndex = 0;
             // 
             // MainWindow
             // 
@@ -418,7 +420,6 @@ namespace PaintfromScratch
         private ToolStripButton ManipulateButton;
         private ToolStrip toolStrip1;
         private ToolStripSeparator toolStripSeparator1;
-        private ToolStripButton toolStripButton5;
         private NumericUpDown thicknessNumericUpDown;
         private ComboBox LineStyleComboBox;
         private NumericUpDown blueSwitch;
@@ -431,6 +432,7 @@ namespace PaintfromScratch
         private ToolStripMenuItem rectItem;
         private ToolStripMenuItem ellipseItem;
         private NumericUpDown spacingUpDown;
+        private ToolStripButton CleanButton;
         private Panel historyPanel;
     }
 }

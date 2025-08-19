@@ -767,5 +767,25 @@ namespace PaintfromScratch
             }
         }
 
+        private void CleanButton_Click(object sender, EventArgs e)
+        {
+            PictureBox pictureBox = GetActivePictureBox();
+            if (pictureBox.Image != null)
+            {
+                pictureBox.Image.Dispose();
+                pictureBox.Tag = null;
+                pictureBox.Image = null;
+            }
+
+            Bitmap newBitmap = new Bitmap(pictureBox.Width, pictureBox.Height);
+            using (Graphics g = Graphics.FromImage(newBitmap))
+            {
+                g.Clear(Color.Transparent); 
+            }
+
+            pictureBox.Image = newBitmap;
+            pictureBox.Tag = newBitmap;
+
+        }
     }
 }
