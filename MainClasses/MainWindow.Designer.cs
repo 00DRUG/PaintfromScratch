@@ -63,8 +63,6 @@ namespace PaintfromScratch
             SaveButton = new ToolStripMenuItem();
             CloseButton = new ToolStripMenuItem();
             OpenButton = new ToolStripMenuItem();
-            editToolStripMenuItem = new ToolStripMenuItem();
-            viewToolStripMenuItem = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
             spacingUpDown = new NumericUpDown();
             textBox_R = new TextBox();
@@ -72,12 +70,12 @@ namespace PaintfromScratch
             textBox_G = new TextBox();
             redSwitch = new NumericUpDown();
             blueSwitch = new NumericUpDown();
-            okButton = new Button();
             greenSwitch = new NumericUpDown();
             colorPreview = new PictureBox();
             colorCircle = new ColorCircle();
             thicknessNumericUpDown = new NumericUpDown();
             LineStyleComboBox = new ComboBox();
+            historyPanel = new Panel();
             BrushButton = new ToolStripButton();
             EraseButton = new ToolStripButton();
             BackgroundTool = new ToolStripButton();
@@ -91,6 +89,7 @@ namespace PaintfromScratch
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)spacingUpDown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)redSwitch).BeginInit();
@@ -103,7 +102,7 @@ namespace PaintfromScratch
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, viewToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(766, 24);
@@ -144,18 +143,6 @@ namespace PaintfromScratch
             OpenButton.Text = "Open";
             OpenButton.Click += OpenFile_Click;
             // 
-            // editToolStripMenuItem
-            // 
-            editToolStripMenuItem.Name = "editToolStripMenuItem";
-            editToolStripMenuItem.Size = new Size(39, 20);
-            editToolStripMenuItem.Text = "Edit";
-            // 
-            // viewToolStripMenuItem
-            // 
-            viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            viewToolStripMenuItem.Size = new Size(44, 20);
-            viewToolStripMenuItem.Text = "View";
-            // 
             // splitContainer1
             // 
             splitContainer1.Dock = DockStyle.Fill;
@@ -172,19 +159,22 @@ namespace PaintfromScratch
             splitContainer1.Panel1.Controls.Add(textBox_G);
             splitContainer1.Panel1.Controls.Add(redSwitch);
             splitContainer1.Panel1.Controls.Add(blueSwitch);
-            splitContainer1.Panel1.Controls.Add(okButton);
             splitContainer1.Panel1.Controls.Add(greenSwitch);
             splitContainer1.Panel1.Controls.Add(colorPreview);
             splitContainer1.Panel1.Controls.Add(colorCircle);
             splitContainer1.Panel1.Controls.Add(thicknessNumericUpDown);
             splitContainer1.Panel1.Controls.Add(LineStyleComboBox);
+            // 
+            // splitContainer1.Panel2
+            // 
+            splitContainer1.Panel2.Controls.Add(historyPanel);
             splitContainer1.Size = new Size(766, 488);
             splitContainer1.SplitterDistance = 76;
             splitContainer1.TabIndex = 2;
             // 
             // spacingUpDown
             // 
-            spacingUpDown.Location = new Point(3, 284);
+            spacingUpDown.Location = new Point(3, 255);
             spacingUpDown.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
             spacingUpDown.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             spacingUpDown.Name = "spacingUpDown";
@@ -238,15 +228,6 @@ namespace PaintfromScratch
             blueSwitch.TabIndex = 1;
             blueSwitch.ValueChanged += RGB_ValueChanged;
             // 
-            // okButton
-            // 
-            okButton.Location = new Point(3, 255);
-            okButton.Name = "okButton";
-            okButton.Size = new Size(72, 23);
-            okButton.TabIndex = 0;
-            okButton.Text = "Apply";
-            okButton.Click += OkButton_Click;
-            // 
             // greenSwitch
             // 
             greenSwitch.Location = new Point(19, 161);
@@ -294,6 +275,15 @@ namespace PaintfromScratch
             LineStyleComboBox.Sorted = true;
             LineStyleComboBox.TabIndex = 1;
             LineStyleComboBox.SelectedIndexChanged += LineStyleComboBox_SelectedIndexChanged;
+            // 
+            // historyPanel
+            // 
+            historyPanel.AutoScroll = true;
+            historyPanel.BorderStyle = BorderStyle.FixedSingle;
+            historyPanel.Location = new Point(601, 3);
+            historyPanel.Name = "historyPanel";
+            historyPanel.Size = new Size(85, 485);
+            historyPanel.TabIndex = 0;
             // 
             // BrushButton
             // 
@@ -399,6 +389,7 @@ namespace PaintfromScratch
             menuStrip1.PerformLayout();
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel1.PerformLayout();
+            splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)spacingUpDown).EndInit();
@@ -416,8 +407,6 @@ namespace PaintfromScratch
         #endregion
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
-        private ToolStripMenuItem editToolStripMenuItem;
-        private ToolStripMenuItem viewToolStripMenuItem;
         private SplitContainer splitContainer1;
         private ToolStripMenuItem NewButton;
         private ToolStripMenuItem SaveButton;
@@ -432,7 +421,6 @@ namespace PaintfromScratch
         private ToolStripButton toolStripButton5;
         private NumericUpDown thicknessNumericUpDown;
         private ComboBox LineStyleComboBox;
-        private Button okButton;
         private NumericUpDown blueSwitch;
         private NumericUpDown greenSwitch;
         private NumericUpDown redSwitch;
@@ -443,5 +431,6 @@ namespace PaintfromScratch
         private ToolStripMenuItem rectItem;
         private ToolStripMenuItem ellipseItem;
         private NumericUpDown spacingUpDown;
+        private Panel historyPanel;
     }
 }

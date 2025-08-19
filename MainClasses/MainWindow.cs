@@ -14,7 +14,6 @@ namespace PaintfromScratch
             CustomParameters();
         }
         private TabControl? tabControl;
-
         private ColorCircle colorCircle;
         private PictureBox colorPreview;
         private ShapeType selectedShape = ShapeType.None;
@@ -42,7 +41,7 @@ namespace PaintfromScratch
         {
             isPushed_Brush = !isPushed_Brush;
             UnclickAllTools(sender);
-            BrushButton.BackColor = isPushed_Brush ? Color.LightGreen : Color.Transparent;
+            BrushButton.BackColor = isPushed_Brush ? Color.LightGray : Color.Transparent;
             selectedShape = ShapeType.None;
         }
         private void EraseButton_Click(object sender, EventArgs e)
@@ -384,7 +383,7 @@ namespace PaintfromScratch
             }
         }
 
-        
+
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
@@ -403,7 +402,7 @@ namespace PaintfromScratch
                     {
                         using (Graphics g = Graphics.FromImage(canvasBitmap))
                         {
-                            currentBrush.Draw(g, e.Location); 
+                            currentBrush.Draw(g, e.Location);
                         }
                         pictureBox.Invalidate();
                     }
@@ -414,7 +413,7 @@ namespace PaintfromScratch
                     if (pictureBox.Tag is Bitmap canvas)
                     {
                         eraser.Erase(canvas, e.Location);
-                        pictureBox.Invalidate(); 
+                        pictureBox.Invalidate();
                     }
                 }
                 if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
@@ -422,10 +421,10 @@ namespace PaintfromScratch
                     startShapePoint = e.Location;
                     previewShape = ShapeFactory.CreateShape(selectedShape,
                                                             startShapePoint,
-                                                            startShapePoint,    
+                                                            startShapePoint,
                                                             brushColor,
                                                             brushThickness);
-                    pictureBox.Invalidate();              
+                    pictureBox.Invalidate();
                 }
 
                 else if (isPushed_Background)
@@ -461,7 +460,7 @@ namespace PaintfromScratch
                         selectedShapeForManipulation = null;
                         currentManipulationMode = ManipulationMode.None;
                         Cursor = Cursors.Default;
-                        pictureBox.Invalidate(); 
+                        pictureBox.Invalidate();
                     }
                 }
             }
@@ -516,7 +515,7 @@ namespace PaintfromScratch
                 {
                     previewShape.Resize(e.Location.X - previewShape.Bounds.Right,
                                         e.Location.Y - previewShape.Bounds.Bottom);
-                    pictureBox.Invalidate();           
+                    pictureBox.Invalidate();
                 }
             }
 
@@ -543,7 +542,7 @@ namespace PaintfromScratch
             {
                 Point temp = pixels.Pop();
                 if (temp.X < 0 || temp.Y < 0 || temp.X >= bmp.Width || temp.Y >= bmp.Height)
-                    continue; 
+                    continue;
 
                 if (bmp.GetPixel(temp.X, temp.Y) == targetColor)
                 {
@@ -561,7 +560,7 @@ namespace PaintfromScratch
         {
             if (pictureBox.Tag is Bitmap canvasBitmap)
             {
-             
+
                 Bitmap tempBitmap = new Bitmap(canvasBitmap);
 
                 using (Graphics g = Graphics.FromImage(tempBitmap))
@@ -573,12 +572,12 @@ namespace PaintfromScratch
 
                     if (previewShape != null)
                     {
-                        previewShape.Draw(g); 
+                        previewShape.Draw(g);
                     }
                 }
 
                 pictureBox.Image = tempBitmap;
-                pictureBox.Tag = tempBitmap; 
+                pictureBox.Tag = tempBitmap;
             }
         }
 
@@ -592,14 +591,14 @@ namespace PaintfromScratch
             if (isErasing)
             {
                 isErasing = false;
-                eraser.ResetLastPoint();    
+                eraser.ResetLastPoint();
             }
             if (selectedShape != ShapeType.None && previewShape != null)
             {
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
-                shapes.Add(previewShape);  
-                previewShape = null;       
+                shapes.Add(previewShape);
+                previewShape = null;
                 pictureBox.Invalidate();
 
             }
@@ -609,6 +608,15 @@ namespace PaintfromScratch
                 currentManipulationMode = ManipulationMode.None;
                 Cursor = Cursors.Default;
             }
+            if (isPainting || isErasing || previewShape != null || isManipulatingShape)
+            {
+                PictureBox pictureBox = sender as PictureBox;
+                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                {
+                    AddToHistory(canvas);
+                }
+            }
+
         }
 
         private void ColorCircle_ColorSelected(object sender, Color selectedColor)
@@ -617,18 +625,16 @@ namespace PaintfromScratch
             greenSwitch.Value = selectedColor.G;
             blueSwitch.Value = selectedColor.B;
             colorPreview.BackColor = selectedColor;
+            currentBrush.Color = selectedColor;
         }
 
         private void RGB_ValueChanged(object sender, EventArgs e)
         {
             Color newColor = Color.FromArgb((int)redSwitch.Value, (int)greenSwitch.Value, (int)blueSwitch.Value);
             colorPreview.BackColor = newColor;
+            currentBrush.Color = colorPreview.BackColor;
         }
 
-        private void OkButton_Click(object sender, EventArgs e)
-        {
-            brushColor = colorPreview.BackColor;
-        }
 
         private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
@@ -657,7 +663,7 @@ namespace PaintfromScratch
             {
                 saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
                 saveDialog.Title = "Save Drawing";
-                 if (tabControl.TabCount != 0 || tabControl is not null )
+                if (tabControl.TabCount != 0 || tabControl is not null)
                 {
                     saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
                 }
@@ -716,14 +722,50 @@ namespace PaintfromScratch
         }
 
 
-
         private PictureBox GetActivePictureBox()
         {
             TabPage activeTab = tabControl.SelectedTab;
-
-            PictureBox pictureBox = activeTab?.Controls.OfType<PictureBox>().FirstOrDefault();
-
-            return pictureBox;
+            return activeTab?.Controls.OfType<PictureBox>().FirstOrDefault();
         }
+
+        // history part
+        private List<Bitmap> historySnapshots = new List<Bitmap>();
+        private void AddToHistory(Bitmap canvasBitmap)
+        {
+            Bitmap snapshot = new Bitmap(canvasBitmap);
+            historySnapshots.Add(snapshot);
+            AddThumbnailToHistoryView(snapshot, historySnapshots.Count - 1);
+        }
+
+        private void AddThumbnailToHistoryView(Bitmap snapshot, int index)
+        {
+            PictureBox thumbnail = new PictureBox
+            {
+                Width = 100,
+                Height = 70,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Image = new Bitmap(snapshot),
+                Margin = new Padding(2)
+            };
+
+            ToolTip tooltip = new ToolTip();
+            tooltip.SetToolTip(thumbnail, $"Step #{index + 1}");
+
+            thumbnail.Click += (s, e) => GoToHistoryState(index);
+
+            historyPanel.Controls.Add(thumbnail);
+        }
+
+        private void GoToHistoryState(int index)
+        {
+            var pictureBox = GetActivePictureBox();
+            if (pictureBox != null && index >= 0 && index < historySnapshots.Count)
+            {
+                pictureBox.Image?.Dispose();
+                pictureBox.Image = new Bitmap(historySnapshots[index]);
+                pictureBox.Tag = pictureBox.Image;
+            }
+        }
+
     }
 }
