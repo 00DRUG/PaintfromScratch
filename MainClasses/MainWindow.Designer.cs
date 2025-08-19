@@ -75,6 +75,7 @@ namespace PaintfromScratch
             colorCircle = new ColorCircle();
             thicknessNumericUpDown = new NumericUpDown();
             LineStyleComboBox = new ComboBox();
+            historyPanel = new Panel();
             BrushButton = new ToolStripButton();
             EraseButton = new ToolStripButton();
             BackgroundTool = new ToolStripButton();
@@ -85,7 +86,6 @@ namespace PaintfromScratch
             ellipseItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             CleanButton = new ToolStripButton();
-            historyPanel = new Panel();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -276,6 +276,15 @@ namespace PaintfromScratch
             LineStyleComboBox.TabIndex = 1;
             LineStyleComboBox.SelectedIndexChanged += LineStyleComboBox_SelectedIndexChanged;
             // 
+            // historyPanel
+            // 
+            historyPanel.AutoScroll = true;
+            historyPanel.BorderStyle = BorderStyle.FixedSingle;
+            historyPanel.Location = new Point(601, 3);
+            historyPanel.Name = "historyPanel";
+            historyPanel.Size = new Size(85, 485);
+            historyPanel.TabIndex = 0;
+            // 
             // BrushButton
             // 
             BrushButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
@@ -319,7 +328,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, ManipulateButton, toolStripSeparator1, CleanButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, ManipulateButton, CleanButton, toolStripSeparator1 });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 25);
@@ -366,15 +375,6 @@ namespace PaintfromScratch
             CleanButton.Size = new Size(23, 22);
             CleanButton.Text = "CleanButton";
             CleanButton.Click += CleanButton_Click;
-            // 
-            // historyPanel
-            // 
-            historyPanel.AutoScroll = true;
-            historyPanel.BorderStyle = BorderStyle.FixedSingle;
-            historyPanel.Location = new Point(601, 3);
-            historyPanel.Name = "historyPanel";
-            historyPanel.Size = new Size(85, 485);
-            historyPanel.TabIndex = 0;
             // 
             // MainWindow
             // 

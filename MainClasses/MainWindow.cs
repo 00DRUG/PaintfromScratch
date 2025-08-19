@@ -26,7 +26,9 @@ namespace PaintfromScratch
         private Color brushColor = Color.Black;
         private float brushThickness = 3f;
         private Point startShapePoint;
-        private List<Shape> shapes = new List<Shape>();
+        // private List<Shape> shapes = new List<Shape>();
+        private Dictionary<TabPage, List<Shape>> tabShapes = new();
+
         private CustomBrush currentBrush = new CustomBrush();
         private EraserTool eraser = new EraserTool();
         private Shape? selectedShapeForManipulation = null;
@@ -114,6 +116,7 @@ namespace PaintfromScratch
                 inputForm.Controls.Add(inputHeight);
                 inputForm.Controls.Add(okButton);
                 inputForm.AcceptButton = okButton;
+
                 bool validInput = false;
                 int canvasWidth = 0, canvasHeight = 0;
                 while (!validInput)
@@ -136,12 +139,8 @@ namespace PaintfromScratch
                     validInput = true;
                 }
 
-                var existingTabControl = splitContainer1.Panel2.Controls.OfType<TabControl>().FirstOrDefault();
-                if (existingTabControl != null)
-                {
-                    tabControl = existingTabControl;
-                }
-                else
+                // Ensure TabControl exists and is added to the UI
+                if (tabControl == null)
                 {
                     tabControl = new TabControl
                     {
@@ -155,6 +154,7 @@ namespace PaintfromScratch
                     tabControl.MouseUp += TabControl_MouseUp;
                 }
 
+                // Create new tab and canvas
                 TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
 
                 PictureBox pictureBox = new PictureBox
@@ -169,18 +169,24 @@ namespace PaintfromScratch
                 pictureBox.Image = canvasBitmap;
                 pictureBox.Tag = canvasBitmap;
 
-                newTabPage.Resize += (sender, e) => CenterPictureBox(pictureBox, newTabPage);
-
+                // Add event handlers
                 pictureBox.MouseDown += PictureBox_MouseDown;
                 pictureBox.MouseMove += PictureBox_MouseMove;
                 pictureBox.MouseUp += PictureBox_MouseUp;
                 pictureBox.Paint += PictureBox_Paint;
 
-                CenterPictureBox(pictureBox, newTabPage);
-
+                // Add PictureBox to TabPage
                 newTabPage.Controls.Add(pictureBox);
+
+                // Add TabPage to TabControl
                 tabControl.TabPages.Add(newTabPage);
-                tabControl.SelectedTab = newTabPage;
+                tabControl.SelectedTab = newTabPage; // Select the new tab
+
+                // Initialize shapes for this tab
+                tabShapes[newTabPage] = new List<Shape>();
+
+                // Center PictureBox in TabPage
+                CenterPictureBox(pictureBox, newTabPage);
 
                 MessageBox.Show(
                     $"PictureBox Size: {pictureBox.Width}x{pictureBox.Height}\n" +
@@ -198,6 +204,7 @@ namespace PaintfromScratch
 
         private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
+       
             PictureBox pictureBox = sender as PictureBox;
             if (pictureBox == null) return;
             DrawCheckerboard(e.Graphics, pictureBox.ClientRectangle);
@@ -205,7 +212,7 @@ namespace PaintfromScratch
             {
                 e.Graphics.DrawImage(pictureBox.Image, 0, 0);
             }
-            foreach (var shape in shapes)
+            foreach (var shape in GetCurrentShapes())
             {
                 shape.Draw(e.Graphics);
             }
@@ -387,6 +394,7 @@ namespace PaintfromScratch
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
+       
             PictureBox pictureBox = sender as PictureBox;
             if (pictureBox == null || pictureBox.Image == null) return;
 
@@ -438,7 +446,8 @@ namespace PaintfromScratch
                 }
                 else if (isManipulatingShape)
                 {
-                    selectedShapeForManipulation = shapes.FirstOrDefault(shape => shape.Contains(e.Location));
+
+                    selectedShapeForManipulation = GetCurrentShapes().FirstOrDefault(shape => shape.Contains(e.Location));
                     if (selectedShapeForManipulation != null)
                     {
                         lastMousePoint = e.Location;
@@ -556,7 +565,7 @@ namespace PaintfromScratch
         }
 
 
-        private void RedrawPictureBox(PictureBox pictureBox)
+        private void RedrawPictureBox(PictureBox pictureBox, TabPage tabPage)
         {
             if (pictureBox.Tag is Bitmap canvasBitmap)
             {
@@ -565,7 +574,7 @@ namespace PaintfromScratch
 
                 using (Graphics g = Graphics.FromImage(tempBitmap))
                 {
-                    foreach (var shape in shapes)
+                    foreach (var shape in GetCurrentShapes())
                     {
                         shape.Draw(g);
                     }
@@ -595,9 +604,10 @@ namespace PaintfromScratch
             }
             if (selectedShape != ShapeType.None && previewShape != null)
             {
+           
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
-                shapes.Add(previewShape);
+                GetCurrentShapes().Add(previewShape);
                 previewShape = null;
                 pictureBox.Invalidate();
 
@@ -659,6 +669,7 @@ namespace PaintfromScratch
         }
         private void SaveFile_Click(object sender, EventArgs e)
         {
+       
             using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
                 saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
@@ -682,11 +693,9 @@ namespace PaintfromScratch
                     {
                         g.SmoothingMode = SmoothingMode.AntiAlias;
 
-                        // 1. Draw the existing canvas
                         g.DrawImageUnscaled((Bitmap)pictureBox.Image, 0, 0);
 
-                        // 2. Draw all shapes
-                        foreach (var shape in shapes)
+                        foreach (var shape in GetCurrentShapes())
                             shape.Draw(g);
                     }
 
@@ -722,7 +731,7 @@ namespace PaintfromScratch
         }
 
 
-        private PictureBox GetActivePictureBox()
+        private PictureBox? GetActivePictureBox()
         {
             TabPage activeTab = tabControl.SelectedTab;
             return activeTab?.Controls.OfType<PictureBox>().FirstOrDefault();
@@ -786,6 +795,12 @@ namespace PaintfromScratch
             pictureBox.Image = newBitmap;
             pictureBox.Tag = newBitmap;
 
+        }
+        private List<Shape> GetCurrentShapes()
+        {
+            if (tabControl?.SelectedTab != null && tabShapes.ContainsKey(tabControl.SelectedTab))
+                return tabShapes[tabControl.SelectedTab];
+            return new List<Shape>();
         }
     }
 }
