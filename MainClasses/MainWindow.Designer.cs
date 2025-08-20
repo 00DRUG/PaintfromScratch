@@ -36,6 +36,31 @@ namespace PaintfromScratch
             ellipseItem.TextImageRelation = TextImageRelation.ImageBeforeText;
             LineStyleComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             LineStyleComboBox.SelectedIndex = 0;
+            // Dock menu and toolstrip to top
+            menuStrip1.Dock = DockStyle.Top;
+            toolStrip1.Dock = DockStyle.Top;
+            // Dock splitContainer to fill the form
+            splitContainer1.Dock = DockStyle.Fill;
+            // Panel1: tools/colors (keep as is, or anchor controls as needed)
+            colorCircle.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            colorPreview.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            thicknessNumericUpDown.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            LineStyleComboBox.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            spacingUpDown.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+
+            // Dock historyPanel to the right
+            historyPanel.Dock = DockStyle.Right;
+            historyPanel.Width = 120;
+            // Panel2: drawing area and history
+            var tabControl = new TabControl
+            {
+                Dock = DockStyle.Fill
+            };
+            splitContainer1.Panel2.Controls.Add(tabControl);
+            //  historyPanel
+            splitContainer1.Panel2.Controls.SetChildIndex(historyPanel, 0);
+
+
         }
         private void switchParameters() { 
             redSwitch.Minimum = 0;
@@ -78,14 +103,14 @@ namespace PaintfromScratch
             historyPanel = new Panel();
             BrushButton = new ToolStripButton();
             EraseButton = new ToolStripButton();
-            BackgroundTool = new ToolStripButton();
+            BackgroundToolButton = new ToolStripButton();
             ManipulateButton = new ToolStripButton();
             toolStrip1 = new ToolStrip();
-            toolStripDropDownButton1 = new ToolStripDropDownButton();
+            FiguresToolButton = new ToolStripDropDownButton();
             rectItem = new ToolStripMenuItem();
             ellipseItem = new ToolStripMenuItem();
-            toolStripSeparator1 = new ToolStripSeparator();
             CleanButton = new ToolStripButton();
+            toolStripSeparator1 = new ToolStripSeparator();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -291,9 +316,10 @@ namespace PaintfromScratch
             BrushButton.Image = PublicResXFileCodeGenerator.Resources.brush;
             BrushButton.ImageTransparentColor = Color.Magenta;
             BrushButton.Name = "BrushButton";
-            BrushButton.Size = new Size(23, 22);
             BrushButton.Text = "toolStripButton1";
             BrushButton.Click += BrushButton_Click;
+            BrushButton.AutoSize = false;
+            BrushButton.Size = new Size(30, 30);
             // 
             // EraseButton
             // 
@@ -301,19 +327,21 @@ namespace PaintfromScratch
             EraseButton.Image = (Image)resources.GetObject("EraseButton.Image");
             EraseButton.ImageTransparentColor = Color.Magenta;
             EraseButton.Name = "EraseButton";
-            EraseButton.Size = new Size(23, 22);
             EraseButton.Text = "toolStripButton2";
             EraseButton.Click += EraseButton_Click;
+            EraseButton.Size = new Size(30, 30);
+            EraseButton.AutoSize = false;
             // 
-            // BackgroundTool
+            // BackgroundToolButton
             // 
-            BackgroundTool.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            BackgroundTool.Image = PublicResXFileCodeGenerator.Resources.bucket;
-            BackgroundTool.ImageTransparentColor = Color.Magenta;
-            BackgroundTool.Name = "BackgroundTool";
-            BackgroundTool.Size = new Size(23, 22);
-            BackgroundTool.Text = "toolStripButton3";
-            BackgroundTool.Click += BackgroundTool_Click;
+            BackgroundToolButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            BackgroundToolButton.Image = PublicResXFileCodeGenerator.Resources.bucket;
+            BackgroundToolButton.ImageTransparentColor = Color.Magenta;
+            BackgroundToolButton.Name = "BackgroundToolButton";
+            BackgroundToolButton.Size = new Size(30, 30);
+            BackgroundToolButton.Text = "toolStripButton3";
+            BackgroundToolButton.Click += BackgroundTool_Click;
+            BackgroundToolButton.AutoSize = false;
             // 
             // ManipulateButton
             // 
@@ -321,36 +349,38 @@ namespace PaintfromScratch
             ManipulateButton.Image = PublicResXFileCodeGenerator.Resources.resize;
             ManipulateButton.ImageTransparentColor = Color.Magenta;
             ManipulateButton.Name = "ManipulateButton";
-            ManipulateButton.Size = new Size(23, 22);
+            ManipulateButton.Size = new Size(30, 30);
+            ManipulateButton.AutoSize = false;  
             ManipulateButton.Text = "toolStripButton4";
             ManipulateButton.ToolTipText = "ManipulateButton";
             ManipulateButton.Click += ManipulateButton_Click;
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, toolStripDropDownButton1, BackgroundTool, ManipulateButton, CleanButton, toolStripSeparator1 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1 });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 25);
             toolStrip1.TabIndex = 1;
             toolStrip1.Text = "toolStrip1";
             // 
-            // toolStripDropDownButton1
+            // FiguresToolButton
             // 
-            toolStripDropDownButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            toolStripDropDownButton1.DropDownItems.AddRange(new ToolStripItem[] { rectItem, ellipseItem });
-            toolStripDropDownButton1.Image = PublicResXFileCodeGenerator.Resources.figures;
-            toolStripDropDownButton1.ImageTransparentColor = Color.Magenta;
-            toolStripDropDownButton1.Name = "toolStripDropDownButton1";
-            toolStripDropDownButton1.Size = new Size(29, 22);
-            toolStripDropDownButton1.Text = "toolStripDropDownButton1";
+            FiguresToolButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            FiguresToolButton.DropDownItems.AddRange(new ToolStripItem[] { rectItem, ellipseItem });
+            FiguresToolButton.Image = PublicResXFileCodeGenerator.Resources.figures;
+            FiguresToolButton.ImageTransparentColor = Color.Magenta;
+            FiguresToolButton.Name = "FiguresToolButton";
+            FiguresToolButton.Size = new Size(30, 30);
+            FiguresToolButton.AutoSize = false;
+            FiguresToolButton.Text = "Figures";
             // 
             // rectItem
             // 
             rectItem.Image = PublicResXFileCodeGenerator.Resources.rectangle;
             rectItem.ImageAlign = ContentAlignment.MiddleLeft;
             rectItem.Name = "rectItem";
-            rectItem.Size = new Size(126, 22);
+            rectItem.Size = new Size(180, 22);
             rectItem.Text = "Rectangle";
             // 
             // ellipseItem
@@ -358,13 +388,8 @@ namespace PaintfromScratch
             ellipseItem.Image = PublicResXFileCodeGenerator.Resources.ellipse;
             ellipseItem.ImageAlign = ContentAlignment.MiddleLeft;
             ellipseItem.Name = "ellipseItem";
-            ellipseItem.Size = new Size(126, 22);
+            ellipseItem.Size = new Size(180, 22);
             ellipseItem.Text = "Ellipse";
-            // 
-            // toolStripSeparator1
-            // 
-            toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(6, 25);
             // 
             // CleanButton
             // 
@@ -372,9 +397,15 @@ namespace PaintfromScratch
             CleanButton.Image = PublicResXFileCodeGenerator.Resources.clean3_com;
             CleanButton.ImageTransparentColor = Color.Magenta;
             CleanButton.Name = "CleanButton";
-            CleanButton.Size = new Size(23, 22);
+            CleanButton.Size = new Size(30, 30);
+            CleanButton.AutoSize = false;
             CleanButton.Text = "CleanButton";
             CleanButton.Click += CleanButton_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(6, 25);
             // 
             // MainWindow
             // 
@@ -384,7 +415,7 @@ namespace PaintfromScratch
             Controls.Add(splitContainer1);
             Controls.Add(toolStrip1);
             Controls.Add(menuStrip1);
-            MinimumSize = new Size(400, 400);
+            MinimumSize = new Size(600, 600);
             Name = "MainWindow";
             Text = "Paint";
             menuStrip1.ResumeLayout(false);
@@ -416,7 +447,7 @@ namespace PaintfromScratch
         private ToolStripMenuItem OpenButton;
         private ToolStripButton BrushButton;
         private ToolStripButton EraseButton;
-        private ToolStripButton BackgroundTool;
+        private ToolStripButton BackgroundToolButton;
         private ToolStripButton ManipulateButton;
         private ToolStrip toolStrip1;
         private ToolStripSeparator toolStripSeparator1;
@@ -428,7 +459,7 @@ namespace PaintfromScratch
         private TextBox textBox_B;
         private TextBox textBox_G;
         private TextBox textBox_R;
-        private ToolStripDropDownButton toolStripDropDownButton1;
+        private ToolStripDropDownButton FiguresToolButton;
         private ToolStripMenuItem rectItem;
         private ToolStripMenuItem ellipseItem;
         private NumericUpDown spacingUpDown;

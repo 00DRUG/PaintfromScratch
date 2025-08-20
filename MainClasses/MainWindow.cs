@@ -62,7 +62,7 @@ namespace PaintfromScratch
 
             isPushed_Background = !isPushed_Background;
             UnclickAllTools(sender);
-            BackgroundTool.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
+            BackgroundToolButton.BackColor = isPushed_Background ? Color.LightGreen : Color.Transparent;
             selectedShape = ShapeType.None;
         }
         private void ManipulateButton_Click(object sender, EventArgs e)
@@ -74,7 +74,7 @@ namespace PaintfromScratch
         }
         private void UnclickAllTools(object sender)
         {
-            object[] tools = { BrushButton, EraseButton, BackgroundTool, ManipulateButton, rectItem, ellipseItem };
+            object[] tools = { BrushButton, EraseButton, BackgroundToolButton, ManipulateButton, rectItem, ellipseItem };
 
             foreach (object tool in tools)
             {
@@ -87,7 +87,7 @@ namespace PaintfromScratch
                         if (btn == BrushButton) isPushed_Brush = false;
                         if (btn == EraseButton) isPushed_Erase = false;
                         if (btn == ManipulateButton) isManipulatingShape = false;
-                        if (btn == BackgroundTool) isPushed_Background = false;
+                        if (btn == BackgroundToolButton) isPushed_Background = false;
                         break;
 
                     case ToolStripMenuItem menuItem:
