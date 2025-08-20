@@ -35,6 +35,9 @@ namespace PaintfromScratch
         private bool isManipulatingShape = false;
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
+
+        private ResizeHandle activeResizeHandle = ResizeHandle.None;
+
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
         private Shape? previewShape = null; //for the preview of the shape being drawn
 
@@ -446,28 +449,27 @@ namespace PaintfromScratch
                 }
                 else if (isManipulatingShape)
                 {
-
                     selectedShapeForManipulation = GetCurrentShapes().FirstOrDefault(shape => shape.Contains(e.Location));
                     if (selectedShapeForManipulation != null)
                     {
                         lastMousePoint = e.Location;
-                        currentManipulationMode = ManipulationMode.Move;
+                        activeResizeHandle = GetResizeHandle(selectedShapeForManipulation, e.Location);
+                        currentManipulationMode = activeResizeHandle == ResizeHandle.None ? ManipulationMode.Move : ManipulationMode.Resize;
 
-                        if (IsNearResizeHandle(selectedShapeForManipulation, e.Location))
+                        Cursor = activeResizeHandle switch
                         {
-                            currentManipulationMode = ManipulationMode.Resize;
-                            Cursor = Cursors.SizeNWSE;
-                        }
-                        else
-                        {
-                            Cursor = Cursors.SizeAll;
-                        }
+                            ResizeHandle.TopLeft or ResizeHandle.BottomRight => Cursors.SizeNWSE,
+                            ResizeHandle.TopRight or ResizeHandle.BottomLeft => Cursors.SizeNESW,
+                            ResizeHandle.Top or ResizeHandle.Bottom => Cursors.SizeNS,
+                            ResizeHandle.Left or ResizeHandle.Right => Cursors.SizeWE,
+                            _ => Cursors.SizeAll
+                        };
                     }
                     else
                     {
-                        // If no shape is selected, reset manipulation state (clickind outside the shape)
                         selectedShapeForManipulation = null;
                         currentManipulationMode = ManipulationMode.None;
+                        activeResizeHandle = ResizeHandle.None;
                         Cursor = Cursors.Default;
                         pictureBox.Invalidate();
                     }
@@ -511,11 +513,10 @@ namespace PaintfromScratch
                 }
                 else if (currentManipulationMode == ManipulationMode.Resize)
                 {
-                    selectedShapeForManipulation.Resize(deltaX, deltaY);
+                    selectedShapeForManipulation.ResizeFromHandle(activeResizeHandle, deltaX, deltaY);
                 }
 
                 lastMousePoint = e.Location;
-
                 pictureBox.Invalidate();
             }
             else if (selectedShape != ShapeType.None && e.Button == MouseButtons.Left)
@@ -530,16 +531,28 @@ namespace PaintfromScratch
 
 
         }
-        private bool IsNearResizeHandle(Shape shape, Point point)
+        private ResizeHandle GetResizeHandle(Shape shape, Point point)
         {
-            int handleSize = 20;
+            int handleSize = 10;
             Rectangle bounds = shape.Bounds;
 
-            return (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-left
-                   (Math.Abs(point.X - bounds.Right) < handleSize && Math.Abs(point.Y - bounds.Top) < handleSize) || // Top-right
-                   (Math.Abs(point.X - bounds.Left) < handleSize && Math.Abs(point.Y - bounds.Bottom) < handleSize) || // Bottom-left
-                   (Math.Abs(point.X - bounds.Right) < handleSize && Math.Abs(point.Y - bounds.Bottom) < handleSize); // Bottom-right
+            if (IsNear(point, bounds.Left, bounds.Top, handleSize)) return ResizeHandle.TopLeft;
+            if (IsNear(point, bounds.Right, bounds.Top, handleSize)) return ResizeHandle.TopRight;
+            if (IsNear(point, bounds.Left, bounds.Bottom, handleSize)) return ResizeHandle.BottomLeft;
+            if (IsNear(point, bounds.Right, bounds.Bottom, handleSize)) return ResizeHandle.BottomRight;
+            if (IsNear(point, bounds.Left, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Left;
+            if (IsNear(point, bounds.Right, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Right;
+            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Top, handleSize)) return ResizeHandle.Top;
+            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Bottom, handleSize)) return ResizeHandle.Bottom;
+
+            return ResizeHandle.None;
         }
+
+        private bool IsNear(Point p, int x, int y, int threshold)
+        {
+            return Math.Abs(p.X - x) < threshold && Math.Abs(p.Y - y) < threshold;
+        }
+
         private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
         {
             if (targetColor.ToArgb() == fillColor.ToArgb()) return;
@@ -565,7 +578,7 @@ namespace PaintfromScratch
         }
 
 
-        private void RedrawPictureBox(PictureBox pictureBox, TabPage tabPage)
+        /*private void RedrawPictureBox(PictureBox pictureBox, TabPage tabPage)
         {
             if (pictureBox.Tag is Bitmap canvasBitmap)
             {
@@ -589,7 +602,7 @@ namespace PaintfromScratch
                 pictureBox.Tag = tempBitmap;
             }
         }
-
+        */
         private void PictureBox_MouseUp(object sender, MouseEventArgs e)
         {
             if (isPainting)
@@ -616,8 +629,10 @@ namespace PaintfromScratch
             {
                 selectedShapeForManipulation = null;
                 currentManipulationMode = ManipulationMode.None;
+                activeResizeHandle = ResizeHandle.None;
                 Cursor = Cursors.Default;
             }
+
             if (isPainting || isErasing || previewShape != null || isManipulatingShape)
             {
                 PictureBox pictureBox = sender as PictureBox;

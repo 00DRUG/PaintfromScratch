@@ -3,6 +3,18 @@
 namespace PaintfromScratch.FiguresClasses
 {
     public enum ShapeType { None, Rectangle, Ellipse }
+    public enum ResizeHandle
+    {
+        None,
+        TopLeft,
+        Top,
+        TopRight,
+        Right,
+        BottomRight,
+        Bottom,
+        BottomLeft,
+        Left
+    }
 
     public class Shape
     {
@@ -10,6 +22,57 @@ namespace PaintfromScratch.FiguresClasses
         public Rectangle Bounds { get; private set; } // Make setter private to allow modification within the class
         public Color Color { get; set; }
         public float Thickness { get; set; }
+
+        public void ResizeFromHandle(ResizeHandle handle, int deltaX, int deltaY)
+        {
+            var bounds = Bounds;
+
+            switch (handle)
+            {
+                case ResizeHandle.TopLeft:
+                    bounds.X += deltaX;
+                    bounds.Y += deltaY;
+                    bounds.Width -= deltaX;
+                    bounds.Height -= deltaY;
+                    break;
+                case ResizeHandle.Top:
+                    bounds.Y += deltaY;
+                    bounds.Height -= deltaY;
+                    break;
+                case ResizeHandle.TopRight:
+                    bounds.Y += deltaY;
+                    bounds.Width += deltaX;
+                    bounds.Height -= deltaY;
+                    break;
+                case ResizeHandle.Right:
+                    bounds.Width += deltaX;
+                    break;
+                case ResizeHandle.BottomRight:
+                    bounds.Width += deltaX;
+                    bounds.Height += deltaY;
+                    break;
+                case ResizeHandle.Bottom:
+                    bounds.Height += deltaY;
+                    break;
+                case ResizeHandle.BottomLeft:
+                    bounds.X += deltaX;
+                    bounds.Width -= deltaX;
+                    bounds.Height += deltaY;
+                    break;
+                case ResizeHandle.Left:
+                    bounds.X += deltaX;
+                    bounds.Width -= deltaX;
+                    break;
+            }
+
+            // Prevent negative width/height
+            if (bounds.Width < 1) bounds.Width = 1;
+            if (bounds.Height < 1) bounds.Height = 1;
+
+            Bounds = bounds;
+        }
+
+
 
         public Shape(ShapeType type, Point start, Point end, Color color, float thickness)
         {
