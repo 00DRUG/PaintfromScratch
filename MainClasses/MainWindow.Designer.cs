@@ -51,12 +51,7 @@ namespace PaintfromScratch
             // Dock historyPanel to the right
             historyPanel.Dock = DockStyle.Right;
             historyPanel.Width = 120;
-            // Panel2: drawing area and history
-            var tabControl = new TabControl
-            {
-                Dock = DockStyle.Fill
-            };
-            splitContainer1.Panel2.Controls.Add(tabControl);
+
             //  historyPanel
             splitContainer1.Panel2.Controls.SetChildIndex(historyPanel, 0);
 
