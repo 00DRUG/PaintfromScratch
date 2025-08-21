@@ -81,8 +81,8 @@ namespace PaintfromScratch
             fileToolStripMenuItem = new ToolStripMenuItem();
             NewButton = new ToolStripMenuItem();
             SaveButton = new ToolStripMenuItem();
-            CloseButton = new ToolStripMenuItem();
             OpenButton = new ToolStripMenuItem();
+            ExitButton = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
             spacingUpDown = new NumericUpDown();
             textBox_R = new TextBox();
@@ -131,7 +131,7 @@ namespace PaintfromScratch
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { NewButton, SaveButton, CloseButton, OpenButton });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { NewButton, SaveButton, OpenButton, ExitButton });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(40, 20);
             fileToolStripMenuItem.Text = " File";
@@ -150,19 +150,19 @@ namespace PaintfromScratch
             SaveButton.Text = "Save";
             SaveButton.Click += SaveFile_Click;
             // 
-            // CloseButton
-            // 
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(180, 22);
-            CloseButton.Text = "Close";
-            CloseButton.Click += CloseButton_Click;
-            // 
             // OpenButton
             // 
             OpenButton.Name = "OpenButton";
             OpenButton.Size = new Size(180, 22);
             OpenButton.Text = "Open";
             OpenButton.Click += OpenFile_Click;
+            // 
+            // ExitButton
+            // 
+            ExitButton.Name = "ExitButton";
+            ExitButton.Size = new Size(180, 22);
+            ExitButton.Text = "Exit";
+            ExitButton.Click += ExitButton_Click;
             // 
             // splitContainer1
             // 
@@ -439,7 +439,7 @@ namespace PaintfromScratch
         private SplitContainer splitContainer1;
         private ToolStripMenuItem NewButton;
         private ToolStripMenuItem SaveButton;
-        private ToolStripMenuItem CloseButton;
+        private ToolStripMenuItem ExitButton;
         private ToolStripMenuItem OpenButton;
         private ToolStripButton BrushButton;
         private ToolStripButton EraseButton;

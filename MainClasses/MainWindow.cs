@@ -265,7 +265,7 @@ namespace PaintfromScratch
 
             TextRenderer.DrawText(e.Graphics, tabPage.Text, tabControl.Font, tabRect, tabControl.ForeColor, TextFormatFlags.Left);
 
-            Rectangle closeButtonRect = GetCloseButtonRect(tabControl, i);
+            Rectangle closeButtonRect = GetCloseButtonRect(tabControl, e.Index);
 
             using (Pen pen = new Pen(Color.Black, 2))
             {
@@ -881,9 +881,63 @@ namespace PaintfromScratch
             return new List<Shape>();
         }
 
-        private void CloseButton_Click(object sender, EventArgs e)
+        private void ExitButton_Click(object sender, EventArgs e)
         {
+            var result = MessageBox.Show(
+                "Do you want to exit?",
+                "Exit Application",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
 
+            if (result != DialogResult.Yes)
+                return;
+
+            if (tabControl == null || tabControl.TabPages.Count == 0)
+            {
+                this.Close();
+                return;
+            }
+
+            for (int i = tabControl.TabPages.Count - 1; i >= 0; i--)
+            {
+                TabPage tabPage = tabControl.TabPages[i];
+                PictureBox pictureBox = tabPage.Controls.OfType<PictureBox>().FirstOrDefault();
+
+                if (pictureBox != null && pictureBox.Image != null)
+                {
+                    DialogResult saveResult = MessageBox.Show(
+                        $"Do you want to save '{tabPage.Text}' before closing?",
+                        "Save Tab",
+                        MessageBoxButtons.YesNoCancel,
+                        MessageBoxIcon.Question);
+
+                    if (saveResult == DialogResult.Yes)
+                    {
+                        using (SaveFileDialog saveDialog = new SaveFileDialog())
+                        {
+                            saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
+                            saveDialog.Title = "Save Drawing";
+                            saveDialog.FileName = $"{tabPage.Text}.png";
+
+                            if (saveDialog.ShowDialog() == DialogResult.OK)
+                            {
+                                pictureBox.Image.Save(saveDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+                            }
+                        }
+                    }
+                    else if (saveResult == DialogResult.Cancel)
+                    {
+                        // Abort closing all tabs and exit
+                        return;
+                    }
+                }
+
+                tabControl.TabPages.RemoveAt(i);
+            }
+
+            this.Close();
         }
+
+
     }
 }
