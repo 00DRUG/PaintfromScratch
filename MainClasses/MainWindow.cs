@@ -142,79 +142,85 @@ namespace PaintfromScratch
                     validInput = true;
                 }
 
-                // Ensure TabControl exists and is added to the UI
-                if (tabControl == null)
-                {
-                    tabControl = new TabControl
-                    {
-                        Dock = DockStyle.Fill,
-                        DrawMode = TabDrawMode.OwnerDrawFixed,
-                    };
-                    splitContainer1.Panel2.Controls.Add(tabControl);
-
-                    tabControl.DrawItem += TabControl_DrawItem;
-                    tabControl.MouseDown += TabControl_MouseDown;
-                    tabControl.MouseUp += TabControl_MouseUp;
-                }
+                TabControl_creation(sender, e);
 
                 // Create new tab and canvas
                 TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
-
-                PictureBox pictureBox = new PictureBox
-                {
-                    BackColor = Color.Transparent,
-                    SizeMode = PictureBoxSizeMode.AutoSize,
-                    Width = canvasWidth,
-                    Height = canvasHeight
-                };
-
+                
                 Bitmap canvasBitmap = new Bitmap(canvasWidth, canvasHeight);
-                pictureBox.Image = canvasBitmap;
-                pictureBox.Tag = canvasBitmap;
 
-                // Add event handlers
-                pictureBox.MouseDown += PictureBox_MouseDown;
-                pictureBox.MouseMove += PictureBox_MouseMove;
-                pictureBox.MouseUp += PictureBox_MouseUp;
-                pictureBox.Paint += PictureBox_Paint;
+                PictureBox_creation_and_add(newTabPage, canvasBitmap);
 
-                // Add PictureBox to TabPage
-                newTabPage.Controls.Add(pictureBox);
-
-                // Add TabPage to TabControl
-                tabControl.TabPages.Add(newTabPage);
-                tabControl.SelectedTab = newTabPage; // Select the new tab
-
-                // Initialize shapes for this tab
-                tabShapes[newTabPage] = new List<Shape>();
-
-                // Center PictureBox in TabPage
-                CenterPictureBox(pictureBox, newTabPage);
-
-                MessageBox.Show(
-                    $"PictureBox Size: {pictureBox.Width}x{pictureBox.Height}\n" +
-                    $"Bitmap Size: {canvasBitmap.Width}x{canvasBitmap.Height}",
-                    "Canvas Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-        private void CenterPictureBox(PictureBox pictureBox, TabPage tabPage)
+        //Helper function to get the exact size of the acriteve area,
+        private Rectangle GetImageDisplayRectangle(PictureBox pb)
         {
-            pictureBox.Left = (tabPage.ClientSize.Width - pictureBox.Width) / 2;
-            pictureBox.Top = (tabPage.ClientSize.Height - pictureBox.Height) / 2;
-        }
+            if (pb.Image == null)
+                return Rectangle.Empty;
 
+            int imgWidth = pb.Image.Width;
+            int imgHeight = pb.Image.Height;
+            int boxWidth = pb.ClientSize.Width;
+            int boxHeight = pb.ClientSize.Height;
+
+            switch (pb.SizeMode)
+            {
+                case PictureBoxSizeMode.Normal:
+                case PictureBoxSizeMode.AutoSize:
+                    return new Rectangle(0, 0, imgWidth, imgHeight);
+
+                case PictureBoxSizeMode.StretchImage:
+                    return new Rectangle(0, 0, boxWidth, boxHeight);
+
+                case PictureBoxSizeMode.CenterImage:
+                    return new Rectangle(
+                        (boxWidth - imgWidth) / 2,
+                        (boxHeight - imgHeight) / 2,
+                        imgWidth,
+                        imgHeight);
+
+                case PictureBoxSizeMode.Zoom:
+                    float imageAspect = (float)imgWidth / imgHeight;
+                    float boxAspect = (float)boxWidth / boxHeight;
+                    int drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imageAspect > boxAspect)
+                    {
+                        drawWidth = boxWidth;
+                        drawHeight = (int)(boxWidth / imageAspect);
+                        offsetX = 0;
+                        offsetY = (boxHeight - drawHeight) / 2;
+                    }
+                    else
+                    {
+                        drawHeight = boxHeight;
+                        drawWidth = (int)(boxHeight * imageAspect);
+                        offsetX = (boxWidth - drawWidth) / 2;
+                        offsetY = 0;
+                    }
+                    return new Rectangle(offsetX, offsetY, drawWidth, drawHeight);
+
+                default:
+                    return new Rectangle(0, 0, imgWidth, imgHeight);
+            }
+        }
 
         private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
-       
             PictureBox pictureBox = sender as PictureBox;
-            if (pictureBox == null) return;
-            DrawCheckerboard(e.Graphics, pictureBox.ClientRectangle);
-            if (pictureBox.Image != null)
-            {
-                e.Graphics.DrawImage(pictureBox.Image, 0, 0);
-            }
+            if (pictureBox == null || pictureBox.Image == null) return;
+
+            Rectangle imageRect = GetImageDisplayRectangle(pictureBox);
+
+            // Draw checkerboard in the displayed image area
+            if (!imageRect.IsEmpty)
+                DrawCheckerboard(e.Graphics, imageRect);
+
+            // Draw the image in the displayed image area
+            e.Graphics.DrawImage(pictureBox.Image, imageRect);
+
             foreach (var shape in GetCurrentShapes())
             {
                 shape.Draw(e.Graphics);
@@ -720,7 +726,50 @@ namespace PaintfromScratch
         }
 
 
+        private void TabControl_creation(object sender, EventArgs e)
+        {
+            // Ensure TabControl exists 
+            if (tabControl == null)
+            {
+                tabControl = new TabControl
+                {
+                    Dock = DockStyle.Fill,
+                    DrawMode = TabDrawMode.OwnerDrawFixed,
+                };
+                splitContainer1.Panel2.Controls.Add(tabControl);
 
+                tabControl.DrawItem += TabControl_DrawItem;
+                tabControl.MouseDown += TabControl_MouseDown;
+                tabControl.MouseUp += TabControl_MouseUp;
+            }
+
+        }
+        private void PictureBox_creation_and_add(TabPage newTabPage, Bitmap canvasBitmap)
+        {
+            PictureBox pictureBox = new PictureBox
+            {
+                BackColor = Color.Transparent,
+                SizeMode = PictureBoxSizeMode.AutoSize,
+
+                Image = canvasBitmap,
+                Tag = canvasBitmap,
+                Width = canvasBitmap.Width,
+                Height = canvasBitmap.Height
+            };
+
+            // Add event handlers
+            pictureBox.MouseDown += PictureBox_MouseDown;
+            pictureBox.MouseMove += PictureBox_MouseMove;
+            pictureBox.MouseUp += PictureBox_MouseUp;
+            pictureBox.Paint += PictureBox_Paint;
+
+            newTabPage.Controls.Add(pictureBox);
+
+            tabControl.TabPages.Add(newTabPage);
+            tabControl.SelectedTab = newTabPage;
+
+            tabShapes[newTabPage] = new List<Shape>();
+        }
         private void OpenFile_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openDialog = new OpenFileDialog())
@@ -730,17 +779,32 @@ namespace PaintfromScratch
 
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
-                    NewButton_Click(sender, e);
+                    TabControl_creation(sender,e);
+                    // Load the image
+                    Bitmap loadedImage;
+                    try
+                    {
+                        using (var temp = new Bitmap(openDialog.FileName))
+                        {
+                            loadedImage = new Bitmap(temp.Width, temp.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                            using (Graphics g = Graphics.FromImage(loadedImage))
+                            {
+                                g.DrawImage(temp, 0, 0, temp.Width, temp.Height);
+                            }
+                        }
 
-                    TabPage newTabPage = tabControl.SelectedTab;
-                    PictureBox pictureBox = newTabPage.Controls.OfType<PictureBox>().FirstOrDefault();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to load image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    // Create new tab and canvas
+                    TabPage newTabPage = new TabPage(Path.GetFileNameWithoutExtension(openDialog.FileName));
+                    PictureBox_creation_and_add(newTabPage, loadedImage);
 
 
-                    Bitmap loadedImage = new Bitmap(openDialog.FileName);
-                    pictureBox.Image = loadedImage;
-                    pictureBox.Tag = loadedImage;
-
-                    newTabPage.Text = Path.GetFileNameWithoutExtension(openDialog.FileName);
                 }
             }
         }
