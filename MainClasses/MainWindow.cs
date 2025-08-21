@@ -146,7 +146,7 @@ namespace PaintfromScratch
 
                 // Create new tab and canvas
                 TabPage newTabPage = new TabPage($"Tab {tabControl.TabPages.Count + 1}");
-                
+
                 Bitmap canvasBitmap = new Bitmap(canvasWidth, canvasHeight);
 
                 PictureBox_creation_and_add(newTabPage, canvasBitmap);
@@ -265,19 +265,24 @@ namespace PaintfromScratch
 
             TextRenderer.DrawText(e.Graphics, tabPage.Text, tabControl.Font, tabRect, tabControl.ForeColor, TextFormatFlags.Left);
 
-            int closeButtonSize = 9;
-            Rectangle closeButtonRect = new Rectangle(
-                tabRect.Right - closeButtonSize - 1,
-                tabRect.Top + 1,
-                closeButtonSize,
-                closeButtonSize
-            );
+            Rectangle closeButtonRect = GetCloseButtonRect(tabControl, i);
 
             using (Pen pen = new Pen(Color.Black, 2))
             {
                 e.Graphics.DrawLine(pen, closeButtonRect.Left, closeButtonRect.Top, closeButtonRect.Right, closeButtonRect.Bottom);
                 e.Graphics.DrawLine(pen, closeButtonRect.Left, closeButtonRect.Bottom, closeButtonRect.Right, closeButtonRect.Top);
             }
+        }
+        private Rectangle GetCloseButtonRect(TabControl tabControl, int tabIndex)
+        {
+            Rectangle tabRect = tabControl.GetTabRect(tabIndex);
+            int closeButtonSize = 15;
+            return new Rectangle(
+                tabRect.Right - closeButtonSize - 5,
+                tabRect.Top + (tabRect.Height - closeButtonSize),
+                closeButtonSize,
+                closeButtonSize
+            );
         }
 
         private void TabControl_MouseDown(object sender, MouseEventArgs e)
@@ -286,15 +291,9 @@ namespace PaintfromScratch
 
             for (int i = 0; i < tabControl.TabPages.Count; i++)
             {
-                Rectangle tabRect = tabControl.GetTabRect(i);
+                Rectangle closeButtonRect = GetCloseButtonRect(tabControl, i);
 
-                int closeButtonSize = 15;
-                Rectangle closeButtonRect = new Rectangle(
-                    tabRect.Right - closeButtonSize - 5,
-                    tabRect.Top + (tabRect.Height - closeButtonSize) / 2,
-                    closeButtonSize,
-                    closeButtonSize
-                );
+
 
                 if (closeButtonRect.Contains(e.Location))
                 {
@@ -403,7 +402,7 @@ namespace PaintfromScratch
 
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
-       
+
             PictureBox pictureBox = sender as PictureBox;
             if (pictureBox == null || pictureBox.Image == null) return;
 
@@ -623,7 +622,7 @@ namespace PaintfromScratch
             }
             if (selectedShape != ShapeType.None && previewShape != null)
             {
-           
+
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox == null) return;
                 GetCurrentShapes().Add(previewShape);
@@ -690,7 +689,7 @@ namespace PaintfromScratch
         }
         private void SaveFile_Click(object sender, EventArgs e)
         {
-       
+
             using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
                 saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
@@ -779,7 +778,7 @@ namespace PaintfromScratch
 
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
-                    TabControl_creation(sender,e);
+                    TabControl_creation(sender, e);
                     // Load the image
                     Bitmap loadedImage;
                     try
@@ -868,9 +867,9 @@ namespace PaintfromScratch
             Bitmap newBitmap = new Bitmap(pictureBox.Width, pictureBox.Height);
             using (Graphics g = Graphics.FromImage(newBitmap))
             {
-                g.Clear(Color.Transparent); 
+                g.Clear(Color.Transparent);
             }
-            GetCurrentShapes().Clear(); 
+            GetCurrentShapes().Clear();
             pictureBox.Image = newBitmap;
             pictureBox.Tag = newBitmap;
 
@@ -880,6 +879,11 @@ namespace PaintfromScratch
             if (tabControl?.SelectedTab != null && tabShapes.ContainsKey(tabControl.SelectedTab))
                 return tabShapes[tabControl.SelectedTab];
             return new List<Shape>();
+        }
+
+        private void CloseButton_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

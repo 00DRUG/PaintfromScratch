@@ -139,27 +139,28 @@ namespace PaintfromScratch
             // NewButton
             // 
             NewButton.Name = "NewButton";
-            NewButton.Size = new Size(103, 22);
+            NewButton.Size = new Size(180, 22);
             NewButton.Text = "New";
             NewButton.Click += NewButton_Click;
             // 
             // SaveButton
             // 
             SaveButton.Name = "SaveButton";
-            SaveButton.Size = new Size(103, 22);
+            SaveButton.Size = new Size(180, 22);
             SaveButton.Text = "Save";
             SaveButton.Click += SaveFile_Click;
             // 
             // CloseButton
             // 
             CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(103, 22);
+            CloseButton.Size = new Size(180, 22);
             CloseButton.Text = "Close";
+            CloseButton.Click += CloseButton_Click;
             // 
             // OpenButton
             // 
             OpenButton.Name = "OpenButton";
-            OpenButton.Size = new Size(103, 22);
+            OpenButton.Size = new Size(180, 22);
             OpenButton.Text = "Open";
             OpenButton.Click += OpenFile_Click;
             // 
@@ -375,7 +376,7 @@ namespace PaintfromScratch
             rectItem.Image = PublicResXFileCodeGenerator.Resources.rectangle;
             rectItem.ImageAlign = ContentAlignment.MiddleLeft;
             rectItem.Name = "rectItem";
-            rectItem.Size = new Size(180, 22);
+            rectItem.Size = new Size(126, 22);
             rectItem.Text = "Rectangle";
             // 
             // ellipseItem
@@ -383,7 +384,7 @@ namespace PaintfromScratch
             ellipseItem.Image = PublicResXFileCodeGenerator.Resources.ellipse;
             ellipseItem.ImageAlign = ContentAlignment.MiddleLeft;
             ellipseItem.Name = "ellipseItem";
-            ellipseItem.Size = new Size(180, 22);
+            ellipseItem.Size = new Size(126, 22);
             ellipseItem.Text = "Ellipse";
             // 
             // CleanButton
