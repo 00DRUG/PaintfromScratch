@@ -32,6 +32,7 @@ namespace PaintfromScratch
         private CustomBrush currentBrush = new CustomBrush();
         private EraserTool eraser = new EraserTool();
         private Shape? selectedShapeForManipulation = null;
+        private bool skipNextPreviewShapeAdd = false;
         private bool isManipulatingShape = false;
         private Point lastMousePoint;
         private enum ManipulationMode { None, Move, Resize }
@@ -41,7 +42,7 @@ namespace PaintfromScratch
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
         private Shape? previewShape = null; //for the preview of the shape being drawn
 
-
+        //Buttons related functions
         private void BrushButton_Click(object sender, EventArgs e)
         {
             isPushed_Brush = !isPushed_Brush;
@@ -69,12 +70,24 @@ namespace PaintfromScratch
         {
             isManipulatingShape = !isManipulatingShape;
             UnclickAllTools(sender);
-            ManipulateButton.BackColor = isManipulatingShape ? Color.LightGreen : Color.Transparent;
+            if (isManipulatingShape)
+            { 
+                ManipulateButton.BackColor = Color.LightGreen;
+                if(selectedShapeForManipulation != null)
+                {
+                    ApplyButton.Visible = true;
+                }
+            }
+            else
+            {
+                ManipulateButton.BackColor = Color.Transparent; 
+                ApplyButton.Visible = false;
+            }
             selectedShape = ShapeType.None;
         }
         private void UnclickAllTools(object sender)
         {
-            object[] tools = { BrushButton, EraseButton, BackgroundToolButton, ManipulateButton, rectItem, ellipseItem };
+            object[] tools = { BrushButton, EraseButton, BackgroundToolButton, ManipulateButton, rectItem, ellipseItem, CleanButton };
 
             foreach (object tool in tools)
             {
@@ -96,7 +109,6 @@ namespace PaintfromScratch
                 }
             }
         }
-
         private void NewButton_Click(object sender, EventArgs e)
         {
             using (Form inputForm = new Form())
@@ -153,8 +165,242 @@ namespace PaintfromScratch
 
             }
         }
+        private void CleanButton_Click(object sender, EventArgs e)
+        {
+            PictureBox pictureBox = GetActivePictureBox();
+            if (pictureBox.Image != null)
+            {
+                pictureBox.Image.Dispose();
+                pictureBox.Tag = null;
+                pictureBox.Image = null;
+            }
 
-        //Helper function to get the exact size of the acriteve area,
+            Bitmap newBitmap = new Bitmap(pictureBox.Width, pictureBox.Height);
+            using (Graphics g = Graphics.FromImage(newBitmap))
+            {
+                g.Clear(Color.Transparent);
+            }
+            GetCurrentShapes().Clear();
+            pictureBox.Image = newBitmap;
+            pictureBox.Tag = newBitmap;
+
+        }
+        private void ExitButton_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Do you want to exit?",
+                "Exit Application",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes)
+                return;
+
+            if (tabControl == null || tabControl.TabPages.Count == 0)
+            {
+                this.Close();
+                return;
+            }
+
+            for (int i = tabControl.TabPages.Count - 1; i >= 0; i--)
+            {
+                TabPage tabPage = tabControl.TabPages[i];
+                PictureBox pictureBox = tabPage.Controls.OfType<PictureBox>().FirstOrDefault();
+
+                if (pictureBox != null && pictureBox.Image != null)
+                {
+                    DialogResult saveResult = MessageBox.Show(
+                        $"Do you want to save '{tabPage.Text}' before closing?",
+                        "Save Tab",
+                        MessageBoxButtons.YesNoCancel,
+                        MessageBoxIcon.Question);
+
+                    if (saveResult == DialogResult.Yes)
+                    {
+                        using (SaveFileDialog saveDialog = new SaveFileDialog())
+                        {
+                            saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
+                            saveDialog.Title = "Save Drawing";
+                            saveDialog.FileName = $"{tabPage.Text}.png";
+
+                            if (saveDialog.ShowDialog() == DialogResult.OK)
+                            {
+                                pictureBox.Image.Save(saveDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+                            }
+                        }
+                    }
+                    else if (saveResult == DialogResult.Cancel)
+                    {
+                        // Abort closing all tabs and exit
+                        return;
+                    }
+                }
+
+                tabControl.TabPages.RemoveAt(i);
+            }
+
+            this.Close();
+        }
+        private void ApplyButton_Click(object sender, EventArgs e)
+        {
+            PictureBox pictureBox = GetActivePictureBox();
+            if (pictureBox == null || pictureBox.Image == null)
+                return;
+
+            Bitmap canvasBitmap = pictureBox.Tag as Bitmap;
+            if (canvasBitmap == null)
+                return;
+
+            List<Shape> shapes = GetCurrentShapes();
+
+            // If manipulating a shape
+            if (isManipulatingShape)
+            {
+                if (selectedShapeForManipulation != null)
+                {
+                    using (Graphics g = Graphics.FromImage(canvasBitmap))
+                    {
+                        selectedShapeForManipulation.Draw(g);
+                    }
+                    shapes.Remove(selectedShapeForManipulation);
+                    selectedShapeForManipulation = null;
+                    isManipulatingShape = false;
+                }
+                else
+                {
+                    MessageBox.Show("No shape selected for manipulation. Please click on a shape first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            // Just to apply the last created shape
+            else if (selectedShape != ShapeType.None && GetCurrentShapes().Count > 0)
+            {
+                var lastShape = shapes[^1];
+
+                using (Graphics g = Graphics.FromImage(canvasBitmap))
+                {
+                    lastShape.Draw(g);
+                }
+                shapes.RemoveAt(shapes.Count - 1);
+                previewShape = null;
+                pictureBox.Invalidate();
+            }
+            currentManipulationMode = ManipulationMode.None;
+            activeResizeHandle = ResizeHandle.None;
+            Cursor = Cursors.Default;
+
+            pictureBox.Invalidate();
+            ManipulateButton_Click(sender, e);
+        }
+        private void ShapeSelectButton_Click(object sender, EventArgs e)
+        {
+            ToolStripMenuItem clickedItem = sender as ToolStripMenuItem;
+            if (clickedItem == null)
+            {
+                ApplyButton.Visible = false;
+                return;
+            }
+            UnclickAllTools(sender);
+            if (clickedItem.Checked)
+            {
+                ApplyButton.Visible = false;
+                clickedItem.Checked = false;
+                selectedShape = ShapeType.None;
+                return;
+            }
+
+            rectItem.Checked = false;
+            ellipseItem.Checked = false;
+
+            clickedItem.Checked = true;
+
+            if (clickedItem == rectItem)
+            {
+                ApplyButton.Visible = true;
+                selectedShape = ShapeType.Rectangle;
+                
+            }
+            else if (clickedItem == ellipseItem)
+            {
+                ApplyButton.Visible = true;
+                selectedShape = ShapeType.Ellipse;
+            }
+        }
+        private void OpenFile_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openDialog = new OpenFileDialog())
+            {
+                openDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
+                openDialog.Title = "Open Drawing";
+
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    TabControl_creation(sender, e);
+                    // Load the image
+                    Bitmap loadedImage;
+                    try
+                    {
+                        using (var temp = new Bitmap(openDialog.FileName))
+                        {
+                            loadedImage = new Bitmap(temp.Width, temp.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                            using (Graphics g = Graphics.FromImage(loadedImage))
+                            {
+                                g.DrawImage(temp, 0, 0, temp.Width, temp.Height);
+                            }
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to load image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    // Create new tab and canvas
+                    TabPage newTabPage = new TabPage(Path.GetFileNameWithoutExtension(openDialog.FileName));
+                    PictureBox_creation_and_add(newTabPage, loadedImage);
+
+
+                }
+            }
+        }
+        private void SaveFile_Click(object sender, EventArgs e)
+        {
+
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
+                saveDialog.Title = "Save Drawing";
+                if (tabControl.TabCount != 0 || tabControl is not null)
+                {
+                    saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
+                }
+                else
+                {
+                    MessageBox.Show(
+                   "You have 0 files active!");
+                }
+
+                if (saveDialog.ShowDialog() == DialogResult.OK)
+                {
+                    PictureBox pictureBox = GetActivePictureBox();
+                    Bitmap bitmapToSave = new Bitmap(pictureBox.Image.Width, pictureBox.Image.Height);
+
+                    using (Graphics g = Graphics.FromImage(bitmapToSave))
+                    {
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                        g.DrawImageUnscaled((Bitmap)pictureBox.Image, 0, 0);
+
+                        foreach (var shape in GetCurrentShapes())
+                            shape.Draw(g);
+                    }
+
+                    bitmapToSave.Save(saveDialog.FileName);
+                }
+            }
+        }
+
+        //Helper related functions
         private Rectangle GetImageDisplayRectangle(PictureBox pb)
         {
             if (pb.Image == null)
@@ -206,39 +452,91 @@ namespace PaintfromScratch
                     return new Rectangle(0, 0, imgWidth, imgHeight);
             }
         }
-
-        private void PictureBox_Paint(object sender, PaintEventArgs e)
+        private List<Shape> GetCurrentShapes()
         {
-            PictureBox pictureBox = sender as PictureBox;
-            if (pictureBox == null || pictureBox.Image == null) return;
-
-            Rectangle imageRect = GetImageDisplayRectangle(pictureBox);
-
-            // Draw checkerboard in the displayed image area
-            if (!imageRect.IsEmpty)
-                DrawCheckerboard(e.Graphics, imageRect);
-
-            // Draw the image in the displayed image area
-            e.Graphics.DrawImage(pictureBox.Image, imageRect);
-
-            foreach (var shape in GetCurrentShapes())
-            {
-                shape.Draw(e.Graphics);
-            }
-            if (previewShape != null)
-            {
-                using Pen p = new Pen(previewShape.Color, previewShape.Thickness)
-                {
-                    DashStyle = DashStyle.Dash
-                };
-                if (previewShape.Type == ShapeType.Rectangle)
-                    e.Graphics.DrawRectangle(p, previewShape.Bounds);
-                else
-                    e.Graphics.DrawEllipse(p, previewShape.Bounds);
-            }
-            if (isManipulatingShape && selectedShapeForManipulation != null)
-                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
+            if (tabControl?.SelectedTab != null && tabShapes.ContainsKey(tabControl.SelectedTab))
+                return tabShapes[tabControl.SelectedTab];
+            return new List<Shape>();
         }
+        private ResizeHandle GetResizeHandle(Shape shape, Point point)
+        {
+            int handleSize = 10;
+            Rectangle bounds = shape.Bounds;
+
+            if (IsNear(point, bounds.Left, bounds.Top, handleSize)) return ResizeHandle.TopLeft;
+            if (IsNear(point, bounds.Right, bounds.Top, handleSize)) return ResizeHandle.TopRight;
+            if (IsNear(point, bounds.Left, bounds.Bottom, handleSize)) return ResizeHandle.BottomLeft;
+            if (IsNear(point, bounds.Right, bounds.Bottom, handleSize)) return ResizeHandle.BottomRight;
+            if (IsNear(point, bounds.Left, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Left;
+            if (IsNear(point, bounds.Right, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Right;
+            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Top, handleSize)) return ResizeHandle.Top;
+            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Bottom, handleSize)) return ResizeHandle.Bottom;
+
+            return ResizeHandle.None;
+        }
+        private bool IsNear(Point p, int x, int y, int threshold)
+        {
+            return Math.Abs(p.X - x) < threshold && Math.Abs(p.Y - y) < threshold;
+        }
+        private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
+        {
+            if (targetColor.ToArgb() == fillColor.ToArgb()) return;
+
+            Stack<Point> pixels = new Stack<Point>();
+            pixels.Push(pt);
+
+            while (pixels.Count > 0)
+            {
+                Point temp = pixels.Pop();
+                if (temp.X < 0 || temp.Y < 0 || temp.X >= bmp.Width || temp.Y >= bmp.Height)
+                    continue;
+
+                if (bmp.GetPixel(temp.X, temp.Y) == targetColor)
+                {
+                    bmp.SetPixel(temp.X, temp.Y, fillColor);
+                    pixels.Push(new Point(temp.X - 1, temp.Y));
+                    pixels.Push(new Point(temp.X + 1, temp.Y));
+                    pixels.Push(new Point(temp.X, temp.Y - 1));
+                    pixels.Push(new Point(temp.X, temp.Y + 1));
+                }
+            }
+        }
+        private void ColorCircle_ColorSelected(object sender, Color selectedColor)
+        {
+            redSwitch.Value = selectedColor.R;
+            greenSwitch.Value = selectedColor.G;
+            blueSwitch.Value = selectedColor.B;
+            colorPreview.BackColor = selectedColor;
+            currentBrush.Color = selectedColor;
+        }
+        private void RGB_ValueChanged(object sender, EventArgs e)
+        {
+            Color newColor = Color.FromArgb((int)redSwitch.Value, (int)greenSwitch.Value, (int)blueSwitch.Value);
+            colorPreview.BackColor = newColor;
+            currentBrush.Color = colorPreview.BackColor;
+        }
+        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
+        {
+            thicknessNumericUpDown.Value = thicknessNumericUpDown.Value;
+            currentBrush.Size = (int)thicknessNumericUpDown.Value;
+            this.Focus();
+        }
+        private void LineStyleComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (LineStyleComboBox.SelectedItem != null)
+            {
+                currentBrush.Shape = LineStyleComboBox.SelectedItem.ToString() switch
+                {
+                    "Circle" => CustomBrush.BrushShape.Circle,
+                    "Square" => CustomBrush.BrushShape.Square,
+                    "Triangle" => CustomBrush.BrushShape.Triangle,
+                    "Star" => CustomBrush.BrushShape.Star,
+                    _ => CustomBrush.BrushShape.Circle  // Default to Circle
+                };
+            }
+        }
+
+        //TabControl related functions
         private void DrawCheckerboard(Graphics g, Rectangle area, int tileSize = 10)
         {
             using (Brush lightBrush = new SolidBrush(Color.LightGray))
@@ -255,8 +553,6 @@ namespace PaintfromScratch
                 }
             }
         }
-
-
         private void TabControl_DrawItem(object sender, DrawItemEventArgs e)
         {
             TabControl tabControl = (TabControl)sender;
@@ -284,7 +580,6 @@ namespace PaintfromScratch
                 closeButtonSize
             );
         }
-
         private void TabControl_MouseDown(object sender, MouseEventArgs e)
         {
             TabControl tabControl = (TabControl)sender;
@@ -326,35 +621,24 @@ namespace PaintfromScratch
                 }
             }
         }
-
-        private void ShapeSelectButton_Click(object sender, EventArgs e)
+        private void TabControl_creation(object sender, EventArgs e)
         {
-            ToolStripMenuItem clickedItem = sender as ToolStripMenuItem;
-            if (clickedItem == null) return;
-            UnclickAllTools(sender);
-            if (clickedItem.Checked)
+            // Ensure TabControl exists 
+            if (tabControl == null)
             {
-                clickedItem.Checked = false;
-                selectedShape = ShapeType.None;
-                return;
+                tabControl = new TabControl
+                {
+                    Dock = DockStyle.Fill,
+                    DrawMode = TabDrawMode.OwnerDrawFixed,
+                };
+                splitContainer1.Panel2.Controls.Add(tabControl);
+
+                tabControl.DrawItem += TabControl_DrawItem;
+                tabControl.MouseDown += TabControl_MouseDown;
+                tabControl.MouseUp += TabControl_MouseUp;
             }
 
-            rectItem.Checked = false;
-            ellipseItem.Checked = false;
-
-            clickedItem.Checked = true;
-
-            if (clickedItem == rectItem)
-            {
-                selectedShape = ShapeType.Rectangle;
-            }
-            else if (clickedItem == ellipseItem)
-            {
-                selectedShape = ShapeType.Ellipse;
-            }
         }
-
-
         private void TabControl_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -398,8 +682,33 @@ namespace PaintfromScratch
             }
         }
 
+        //PictureBox related functions
+        private void PictureBox_creation_and_add(TabPage newTabPage, Bitmap canvasBitmap)
+        {
+            PictureBox pictureBox = new PictureBox
+            {
+                BackColor = Color.Transparent,
+                SizeMode = PictureBoxSizeMode.AutoSize,
 
+                Image = canvasBitmap,
+                Tag = canvasBitmap,
+                Width = canvasBitmap.Width,
+                Height = canvasBitmap.Height
+            };
 
+            // Add event handlers
+            pictureBox.MouseDown += PictureBox_MouseDown;
+            pictureBox.MouseMove += PictureBox_MouseMove;
+            pictureBox.MouseUp += PictureBox_MouseUp;
+            pictureBox.Paint += PictureBox_Paint;
+
+            newTabPage.Controls.Add(pictureBox);
+
+            tabControl.TabPages.Add(newTabPage);
+            tabControl.SelectedTab = newTabPage;
+
+            tabShapes[newTabPage] = new List<Shape>();
+        }
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
 
@@ -438,7 +747,7 @@ namespace PaintfromScratch
                     previewShape = ShapeFactory.CreateShape(selectedShape,
                                                             startShapePoint,
                                                             startShapePoint,
-                                                            brushColor,
+                                                            currentBrush.Color,
                                                             brushThickness);
                     pictureBox.Invalidate();
                 }
@@ -447,9 +756,8 @@ namespace PaintfromScratch
                 {
 
                     Color clickedColor = bmp.GetPixel(e.X, e.Y);
-                    Color fillColor = brushColor;
 
-                    FloodFill(bmp, e.Location, clickedColor, fillColor);
+                    FloodFill(bmp, e.Location, clickedColor, currentBrush.Color);
                     pictureBox.Invalidate();
                 }
                 else if (isManipulatingShape)
@@ -469,6 +777,7 @@ namespace PaintfromScratch
                             ResizeHandle.Left or ResizeHandle.Right => Cursors.SizeWE,
                             _ => Cursors.SizeAll
                         };
+                        ApplyButton.Visible = true;
                     }
                     else
                     {
@@ -476,6 +785,7 @@ namespace PaintfromScratch
                         currentManipulationMode = ManipulationMode.None;
                         activeResizeHandle = ResizeHandle.None;
                         Cursor = Cursors.Default;
+                        ApplyButton.Visible = false;
                         pictureBox.Invalidate();
                     }
                 }
@@ -536,53 +846,48 @@ namespace PaintfromScratch
 
 
         }
-        private ResizeHandle GetResizeHandle(Shape shape, Point point)
+        private void PictureBox_MouseUp(object sender, MouseEventArgs e)
         {
-            int handleSize = 10;
-            Rectangle bounds = shape.Bounds;
-
-            if (IsNear(point, bounds.Left, bounds.Top, handleSize)) return ResizeHandle.TopLeft;
-            if (IsNear(point, bounds.Right, bounds.Top, handleSize)) return ResizeHandle.TopRight;
-            if (IsNear(point, bounds.Left, bounds.Bottom, handleSize)) return ResizeHandle.BottomLeft;
-            if (IsNear(point, bounds.Right, bounds.Bottom, handleSize)) return ResizeHandle.BottomRight;
-            if (IsNear(point, bounds.Left, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Left;
-            if (IsNear(point, bounds.Right, bounds.Top + bounds.Height / 2, handleSize)) return ResizeHandle.Right;
-            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Top, handleSize)) return ResizeHandle.Top;
-            if (IsNear(point, bounds.Left + bounds.Width / 2, bounds.Bottom, handleSize)) return ResizeHandle.Bottom;
-
-            return ResizeHandle.None;
-        }
-
-        private bool IsNear(Point p, int x, int y, int threshold)
-        {
-            return Math.Abs(p.X - x) < threshold && Math.Abs(p.Y - y) < threshold;
-        }
-
-        private void FloodFill(Bitmap bmp, Point pt, Color targetColor, Color fillColor)
-        {
-            if (targetColor.ToArgb() == fillColor.ToArgb()) return;
-
-            Stack<Point> pixels = new Stack<Point>();
-            pixels.Push(pt);
-
-            while (pixels.Count > 0)
+            if (isPainting)
             {
-                Point temp = pixels.Pop();
-                if (temp.X < 0 || temp.Y < 0 || temp.X >= bmp.Width || temp.Y >= bmp.Height)
-                    continue;
-
-                if (bmp.GetPixel(temp.X, temp.Y) == targetColor)
+                isPainting = false;
+                currentBrush.ResetLastPoint();
+            }
+            if (isErasing)
+            {
+                isErasing = false;
+                eraser.ResetLastPoint();
+            }
+            if (selectedShape != ShapeType.None && previewShape != null)
+            {
+                if (!skipNextPreviewShapeAdd)
                 {
-                    bmp.SetPixel(temp.X, temp.Y, fillColor);
-                    pixels.Push(new Point(temp.X - 1, temp.Y));
-                    pixels.Push(new Point(temp.X + 1, temp.Y));
-                    pixels.Push(new Point(temp.X, temp.Y - 1));
-                    pixels.Push(new Point(temp.X, temp.Y + 1));
+                    PictureBox pictureBox = sender as PictureBox;
+                    if (pictureBox == null) return;
+                    GetCurrentShapes().Add(previewShape);
+                    previewShape = null;
+                    pictureBox.Invalidate();
+                }
+                skipNextPreviewShapeAdd = false;
+            }
+            if (isManipulatingShape)
+            {
+                //selectedShapeForManipulation = null;
+                currentManipulationMode = ManipulationMode.None;
+                activeResizeHandle = ResizeHandle.None;
+                Cursor = Cursors.Default;
+            }
+
+            if (isPainting || isErasing || previewShape != null || isManipulatingShape)
+            {
+                PictureBox pictureBox = sender as PictureBox;
+                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                {
+                    AddToHistory(canvas);
                 }
             }
+
         }
-
-
         /*private void RedrawPictureBox(PictureBox pictureBox, TabPage tabPage)
         {
             if (pictureBox.Tag is Bitmap canvasBitmap)
@@ -608,214 +913,46 @@ namespace PaintfromScratch
             }
         }
         */
-        private void PictureBox_MouseUp(object sender, MouseEventArgs e)
+        private void PictureBox_Paint(object sender, PaintEventArgs e)
         {
-            if (isPainting)
-            {
-                isPainting = false;
-                currentBrush.ResetLastPoint();
-            }
-            if (isErasing)
-            {
-                isErasing = false;
-                eraser.ResetLastPoint();
-            }
-            if (selectedShape != ShapeType.None && previewShape != null)
-            {
+            PictureBox pictureBox = sender as PictureBox;
+            if (pictureBox == null || pictureBox.Image == null) return;
 
-                PictureBox pictureBox = sender as PictureBox;
-                if (pictureBox == null) return;
-                GetCurrentShapes().Add(previewShape);
-                previewShape = null;
-                pictureBox.Invalidate();
+            Rectangle imageRect = GetImageDisplayRectangle(pictureBox);
 
-            }
-            if (isManipulatingShape)
-            {
-                selectedShapeForManipulation = null;
-                currentManipulationMode = ManipulationMode.None;
-                activeResizeHandle = ResizeHandle.None;
-                Cursor = Cursors.Default;
-            }
+            // Draw checkerboard in the displayed image area
+            if (!imageRect.IsEmpty)
+                DrawCheckerboard(e.Graphics, imageRect);
 
-            if (isPainting || isErasing || previewShape != null || isManipulatingShape)
+            // Draw the image in the displayed image area
+            e.Graphics.DrawImage(pictureBox.Image, imageRect);
+
+            foreach (var shape in GetCurrentShapes())
             {
-                PictureBox pictureBox = sender as PictureBox;
-                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                shape.Draw(e.Graphics);
+            }
+            if (previewShape != null)
+            {
+                using Pen p = new Pen(previewShape.Color, previewShape.Thickness)
                 {
-                    AddToHistory(canvas);
-                }
-            }
-
-        }
-
-        private void ColorCircle_ColorSelected(object sender, Color selectedColor)
-        {
-            redSwitch.Value = selectedColor.R;
-            greenSwitch.Value = selectedColor.G;
-            blueSwitch.Value = selectedColor.B;
-            colorPreview.BackColor = selectedColor;
-            currentBrush.Color = selectedColor;
-        }
-
-        private void RGB_ValueChanged(object sender, EventArgs e)
-        {
-            Color newColor = Color.FromArgb((int)redSwitch.Value, (int)greenSwitch.Value, (int)blueSwitch.Value);
-            colorPreview.BackColor = newColor;
-            currentBrush.Color = colorPreview.BackColor;
-        }
-
-
-        private void ThicknessNumericUpDown_ValueChanged(object sender, EventArgs e)
-        {
-            thicknessNumericUpDown.Value = thicknessNumericUpDown.Value;
-            currentBrush.Size = (int)thicknessNumericUpDown.Value;
-            this.Focus();
-        }
-
-        private void LineStyleComboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (LineStyleComboBox.SelectedItem != null)
-            {
-                currentBrush.Shape = LineStyleComboBox.SelectedItem.ToString() switch
-                {
-                    "Circle" => CustomBrush.BrushShape.Circle,
-                    "Square" => CustomBrush.BrushShape.Square,
-                    "Triangle" => CustomBrush.BrushShape.Triangle,
-                    "Star" => CustomBrush.BrushShape.Star,
-                    _ => CustomBrush.BrushShape.Circle  // Default to Circle
+                    DashStyle = DashStyle.Dash
                 };
-            }
-        }
-        private void SaveFile_Click(object sender, EventArgs e)
-        {
-
-            using (SaveFileDialog saveDialog = new SaveFileDialog())
-            {
-                saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
-                saveDialog.Title = "Save Drawing";
-                if (tabControl.TabCount != 0 || tabControl is not null)
-                {
-                    saveDialog.FileName = $"{tabControl.SelectedTab.Text}.png";
-                }
+                if (previewShape.Type == ShapeType.Rectangle)
+                    e.Graphics.DrawRectangle(p, previewShape.Bounds);
                 else
-                {
-                    MessageBox.Show(
-                   "You have 0 files active!");
-                }
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    PictureBox pictureBox = GetActivePictureBox();
-                    Bitmap bitmapToSave = new Bitmap(pictureBox.Image.Width, pictureBox.Image.Height);
-
-                    using (Graphics g = Graphics.FromImage(bitmapToSave))
-                    {
-                        g.SmoothingMode = SmoothingMode.AntiAlias;
-
-                        g.DrawImageUnscaled((Bitmap)pictureBox.Image, 0, 0);
-
-                        foreach (var shape in GetCurrentShapes())
-                            shape.Draw(g);
-                    }
-
-                    bitmapToSave.Save(saveDialog.FileName);
-                }
+                    e.Graphics.DrawEllipse(p, previewShape.Bounds);
             }
+            if (isManipulatingShape && selectedShapeForManipulation != null)
+                selectedShapeForManipulation.DrawBoundingBox(e.Graphics);
         }
-
-
-        private void TabControl_creation(object sender, EventArgs e)
-        {
-            // Ensure TabControl exists 
-            if (tabControl == null)
-            {
-                tabControl = new TabControl
-                {
-                    Dock = DockStyle.Fill,
-                    DrawMode = TabDrawMode.OwnerDrawFixed,
-                };
-                splitContainer1.Panel2.Controls.Add(tabControl);
-
-                tabControl.DrawItem += TabControl_DrawItem;
-                tabControl.MouseDown += TabControl_MouseDown;
-                tabControl.MouseUp += TabControl_MouseUp;
-            }
-
-        }
-        private void PictureBox_creation_and_add(TabPage newTabPage, Bitmap canvasBitmap)
-        {
-            PictureBox pictureBox = new PictureBox
-            {
-                BackColor = Color.Transparent,
-                SizeMode = PictureBoxSizeMode.AutoSize,
-
-                Image = canvasBitmap,
-                Tag = canvasBitmap,
-                Width = canvasBitmap.Width,
-                Height = canvasBitmap.Height
-            };
-
-            // Add event handlers
-            pictureBox.MouseDown += PictureBox_MouseDown;
-            pictureBox.MouseMove += PictureBox_MouseMove;
-            pictureBox.MouseUp += PictureBox_MouseUp;
-            pictureBox.Paint += PictureBox_Paint;
-
-            newTabPage.Controls.Add(pictureBox);
-
-            tabControl.TabPages.Add(newTabPage);
-            tabControl.SelectedTab = newTabPage;
-
-            tabShapes[newTabPage] = new List<Shape>();
-        }
-        private void OpenFile_Click(object sender, EventArgs e)
-        {
-            using (OpenFileDialog openDialog = new OpenFileDialog())
-            {
-                openDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
-                openDialog.Title = "Open Drawing";
-
-                if (openDialog.ShowDialog() == DialogResult.OK)
-                {
-                    TabControl_creation(sender, e);
-                    // Load the image
-                    Bitmap loadedImage;
-                    try
-                    {
-                        using (var temp = new Bitmap(openDialog.FileName))
-                        {
-                            loadedImage = new Bitmap(temp.Width, temp.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                            using (Graphics g = Graphics.FromImage(loadedImage))
-                            {
-                                g.DrawImage(temp, 0, 0, temp.Width, temp.Height);
-                            }
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Failed to load image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    // Create new tab and canvas
-                    TabPage newTabPage = new TabPage(Path.GetFileNameWithoutExtension(openDialog.FileName));
-                    PictureBox_creation_and_add(newTabPage, loadedImage);
-
-
-                }
-            }
-        }
-
-
         private PictureBox? GetActivePictureBox()
         {
             TabPage activeTab = tabControl.SelectedTab;
             return activeTab?.Controls.OfType<PictureBox>().FirstOrDefault();
         }
 
-        // history part
+
+        // history related functions
         private List<Bitmap> historySnapshots = new List<Bitmap>();
         private void AddToHistory(Bitmap canvasBitmap)
         {
@@ -823,7 +960,6 @@ namespace PaintfromScratch
             historySnapshots.Add(snapshot);
             AddThumbnailToHistoryView(snapshot, historySnapshots.Count - 1);
         }
-
         private void AddThumbnailToHistoryView(Bitmap snapshot, int index)
         {
             PictureBox thumbnail = new PictureBox
@@ -842,7 +978,6 @@ namespace PaintfromScratch
 
             historyPanel.Controls.Add(thumbnail);
         }
-
         private void GoToHistoryState(int index)
         {
             var pictureBox = GetActivePictureBox();
@@ -853,91 +988,5 @@ namespace PaintfromScratch
                 pictureBox.Tag = pictureBox.Image;
             }
         }
-
-        private void CleanButton_Click(object sender, EventArgs e)
-        {
-            PictureBox pictureBox = GetActivePictureBox();
-            if (pictureBox.Image != null)
-            {
-                pictureBox.Image.Dispose();
-                pictureBox.Tag = null;
-                pictureBox.Image = null;
-            }
-
-            Bitmap newBitmap = new Bitmap(pictureBox.Width, pictureBox.Height);
-            using (Graphics g = Graphics.FromImage(newBitmap))
-            {
-                g.Clear(Color.Transparent);
-            }
-            GetCurrentShapes().Clear();
-            pictureBox.Image = newBitmap;
-            pictureBox.Tag = newBitmap;
-
-        }
-        private List<Shape> GetCurrentShapes()
-        {
-            if (tabControl?.SelectedTab != null && tabShapes.ContainsKey(tabControl.SelectedTab))
-                return tabShapes[tabControl.SelectedTab];
-            return new List<Shape>();
-        }
-
-        private void ExitButton_Click(object sender, EventArgs e)
-        {
-            var result = MessageBox.Show(
-                "Do you want to exit?",
-                "Exit Application",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (result != DialogResult.Yes)
-                return;
-
-            if (tabControl == null || tabControl.TabPages.Count == 0)
-            {
-                this.Close();
-                return;
-            }
-
-            for (int i = tabControl.TabPages.Count - 1; i >= 0; i--)
-            {
-                TabPage tabPage = tabControl.TabPages[i];
-                PictureBox pictureBox = tabPage.Controls.OfType<PictureBox>().FirstOrDefault();
-
-                if (pictureBox != null && pictureBox.Image != null)
-                {
-                    DialogResult saveResult = MessageBox.Show(
-                        $"Do you want to save '{tabPage.Text}' before closing?",
-                        "Save Tab",
-                        MessageBoxButtons.YesNoCancel,
-                        MessageBoxIcon.Question);
-
-                    if (saveResult == DialogResult.Yes)
-                    {
-                        using (SaveFileDialog saveDialog = new SaveFileDialog())
-                        {
-                            saveDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg|Bitmap Image|*.bmp";
-                            saveDialog.Title = "Save Drawing";
-                            saveDialog.FileName = $"{tabPage.Text}.png";
-
-                            if (saveDialog.ShowDialog() == DialogResult.OK)
-                            {
-                                pictureBox.Image.Save(saveDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
-                            }
-                        }
-                    }
-                    else if (saveResult == DialogResult.Cancel)
-                    {
-                        // Abort closing all tabs and exit
-                        return;
-                    }
-                }
-
-                tabControl.TabPages.RemoveAt(i);
-            }
-
-            this.Close();
-        }
-
-
     }
 }

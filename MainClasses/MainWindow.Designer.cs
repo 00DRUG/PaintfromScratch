@@ -106,6 +106,7 @@ namespace PaintfromScratch
             ellipseItem = new ToolStripMenuItem();
             CleanButton = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
+            ApplyButton = new ToolStripButton();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -139,28 +140,28 @@ namespace PaintfromScratch
             // NewButton
             // 
             NewButton.Name = "NewButton";
-            NewButton.Size = new Size(180, 22);
+            NewButton.Size = new Size(103, 22);
             NewButton.Text = "New";
             NewButton.Click += NewButton_Click;
             // 
             // SaveButton
             // 
             SaveButton.Name = "SaveButton";
-            SaveButton.Size = new Size(180, 22);
+            SaveButton.Size = new Size(103, 22);
             SaveButton.Text = "Save";
             SaveButton.Click += SaveFile_Click;
             // 
             // OpenButton
             // 
             OpenButton.Name = "OpenButton";
-            OpenButton.Size = new Size(180, 22);
+            OpenButton.Size = new Size(103, 22);
             OpenButton.Text = "Open";
             OpenButton.Click += OpenFile_Click;
             // 
             // ExitButton
             // 
             ExitButton.Name = "ExitButton";
-            ExitButton.Size = new Size(180, 22);
+            ExitButton.Size = new Size(103, 22);
             ExitButton.Text = "Exit";
             ExitButton.Click += ExitButton_Click;
             // 
@@ -353,7 +354,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, ApplyButton });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 33);
@@ -402,6 +403,18 @@ namespace PaintfromScratch
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(6, 33);
+            // 
+            // ApplyButton
+            // 
+            ApplyButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            ApplyButton.Image = PublicResXFileCodeGenerator.Resources.check_mark;
+            ApplyButton.ImageTransparentColor = Color.Magenta;
+            ApplyButton.Name = "ApplyButton";
+            ApplyButton.Size = new Size(23, 30);
+            ApplyButton.Text = "ApplyButton";
+            ApplyButton.ToolTipText = "Apply Button";
+            ApplyButton.Visible = false;
+            ApplyButton.Click += ApplyButton_Click;
             // 
             // MainWindow
             // 
@@ -461,5 +474,6 @@ namespace PaintfromScratch
         private NumericUpDown spacingUpDown;
         private ToolStripButton CleanButton;
         private Panel historyPanel;
+        private ToolStripButton ApplyButton;
     }
 }
