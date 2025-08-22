@@ -11,6 +11,7 @@ namespace PaintfromScratch
         public MainWindow()
         {
             InitializeComponent();
+            InitializeHistoryPanelCurtain();
             CustomParameters();
         }
         private TabControl? tabControl;
@@ -71,16 +72,16 @@ namespace PaintfromScratch
             isManipulatingShape = !isManipulatingShape;
             UnclickAllTools(sender);
             if (isManipulatingShape)
-            { 
+            {
                 ManipulateButton.BackColor = Color.LightGreen;
-                if(selectedShapeForManipulation != null)
+                if (selectedShapeForManipulation != null)
                 {
                     ApplyButton.Visible = true;
                 }
             }
             else
             {
-                ManipulateButton.BackColor = Color.Transparent; 
+                ManipulateButton.BackColor = Color.Transparent;
                 ApplyButton.Visible = false;
             }
             selectedShape = ShapeType.None;
@@ -317,7 +318,7 @@ namespace PaintfromScratch
             {
                 ApplyButton.Visible = true;
                 selectedShape = ShapeType.Rectangle;
-                
+
             }
             else if (clickedItem == ellipseItem)
             {
@@ -986,6 +987,69 @@ namespace PaintfromScratch
                 pictureBox.Image?.Dispose();
                 pictureBox.Image = new Bitmap(historySnapshots[index]);
                 pictureBox.Tag = pictureBox.Image;
+            }
+        }
+
+
+        private System.Windows.Forms.Timer historyPanelTimer = new System.Windows.Forms.Timer();
+        private bool historyPanelVisible = true;
+        private int historyPanelTargetWidth = 120; // Default width
+        private int historyPanelMinWidth = 0;      // Closed width
+
+        private void InitializeHistoryPanelCurtain()
+        {
+            historyPanelTimer.Interval = 10;
+            historyPanelTimer.Tick += HistoryPanelTimer_Tick;
+        }
+
+        private void historyToggleButton_Click(object sender, EventArgs e)
+        {
+            if (historyPanelVisible)
+            {
+                historyPanelTargetWidth = historyPanelMinWidth;
+                historyPanelVisible = false;
+            }
+            else
+            {
+                historyPanelTargetWidth = 120;
+                historyPanelVisible = true;
+            }
+            historyPanelTimer.Start();
+        }
+
+        private void HistoryPanelTimer_Tick(object sender, EventArgs e)
+        {
+            if (historyPanelVisible)
+            {
+                if (historyPanel.Width < historyPanelTargetWidth)
+                {
+                    historyPanel.Width += 10;
+                    if (historyPanel.Width >= historyPanelTargetWidth)
+                    {
+                        historyPanel.Width = historyPanelTargetWidth;
+                        historyPanelTimer.Stop();
+                    }
+                }
+                else
+                {
+                    historyPanelTimer.Stop();
+                }
+            }
+            else
+            {
+                if (historyPanel.Width > historyPanelTargetWidth)
+                {
+                    historyPanel.Width -= 10;
+                    if (historyPanel.Width <= historyPanelTargetWidth)
+                    {
+                        historyPanel.Width = historyPanelTargetWidth;
+                        historyPanelTimer.Stop();
+                    }
+                }
+                else
+                {
+                    historyPanelTimer.Stop();
+                }
             }
         }
     }
