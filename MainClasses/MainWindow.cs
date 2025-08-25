@@ -164,7 +164,7 @@ namespace PaintfromScratch
                 Bitmap canvasBitmap = new Bitmap(canvasWidth, canvasHeight);
 
                 PictureBox_creation_and_add(newTabPage, canvasBitmap);
-                AddToHistory(canvasBitmap, "New Canvas Created");
+                AddToHistory(canvasBitmap, $"New canvas created: {canvasWidth} x {canvasHeight}");
             }
         }
         private void CleanButton_Click(object sender, EventArgs e)
@@ -185,7 +185,7 @@ namespace PaintfromScratch
             GetCurrentShapes().Clear();
             pictureBox.Image = newBitmap;
             pictureBox.Tag = newBitmap;
-            AddToHistory(newBitmap, "Canvas Cleared");
+            AddToHistory(newBitmap, "Canvas cleared");
         }
         private void ExitButton_Click(object sender, EventArgs e)
         {
@@ -265,9 +265,10 @@ namespace PaintfromScratch
                         selectedShapeForManipulation.Draw(g);
                     }
                     shapes.Remove(selectedShapeForManipulation);
+                    AddToHistory(canvasBitmap, $"Shape manipulated: {selectedShapeForManipulation.Type}");
                     selectedShapeForManipulation = null;
                     isManipulatingShape = false;
-                    AddToHistory(canvasBitmap, "Shape Manipulated");
+                    
                 }
                 else
                 {
@@ -980,36 +981,83 @@ namespace PaintfromScratch
                 pictureBox.Image?.Dispose();
                 pictureBox.Image = new Bitmap(historyEntries[index].Snapshot);
                 pictureBox.Tag = pictureBox.Image;
+
+                // Remove all history entries AFTER the clicked index
+                int removeCount = historyEntries.Count - (index + 1);
+                if (removeCount > 0)
+                {
+                    historyEntries.RemoveRange(index + 1, removeCount);
+                }
+                //Rebuild the history 
+                RebuildHistoryPanel(index);
             }
+        }
+        private void RebuildHistoryPanel(int selectedIndex)
+        {
+            historyPanel.Controls.Clear();
+            for (int i = historyEntries.Count - 1; i >= 0; i--)
+            {
+                Panel box = new Panel
+                {
+                    Height = 40,
+                    Margin = new Padding(2),
+                    BackColor = (i == selectedIndex) ? Color.LightBlue : Color.White,
+                    Dock = DockStyle.Top,
+                    Tag = i
+                };
+                Label label = new Label
+                {
+                    Text = $"{i + 1}: {historyEntries[i].Description}",
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                    Tag = i
+                };
+                box.Controls.Add(label);
+
+                box.Click += Box_Click;
+                label.Click += Box_Click;
+
+                historyPanel.Controls.Add(box);
+            }
+        }
+        // Helper for click event
+        private void Box_Click(object sender, EventArgs e)
+        {
+            int index = (sender as Control)?.Tag is int idx ? idx : 0;
+            GoToHistoryState(index);
         }
         private void AddTextBoxToHistoryView(string description, int index)
         {
             Panel box = new Panel
             {
-                Width = 100,
                 Height = 40,
                 Margin = new Padding(2),
                 BackColor = Color.White,
-                Dock = DockStyle.Top
+                Dock = DockStyle.Top,
+                Tag = index
             };
             Label label = new Label
             {
                 Text = $"{index + 1}: {description}",
                 Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 9, FontStyle.Regular)
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                Tag = index
             };
             box.Controls.Add(label);
-            box.Click += (s, e) => GoToHistoryState(index);
+
+            box.Click += Box_Click;
+            label.Click += Box_Click;
+
             historyPanel.Controls.Add(box);
-            // stacked boxes 
             historyPanel.Controls.SetChildIndex(box, 0);
         }
 
         // Panel closing/opening related functions
         private System.Windows.Forms.Timer historyPanelTimer = new System.Windows.Forms.Timer();
         private bool historyPanelVisible = true;
-        private int historyPanelTargetWidth = 120; 
+        private int historyPanelTargetWidth = 200; 
         private int historyPanelMinWidth = 0;      
 
         private void InitializeHistoryPanelCurtain()
@@ -1023,12 +1071,13 @@ namespace PaintfromScratch
             if (historyPanelVisible)
             {
                 historyPanelTargetWidth = historyPanelMinWidth;
-                historyPanelVisible = false;
+                historyPanelVisible = false; 
             }
             else
             {
-                historyPanelTargetWidth = 120;
+                historyPanelTargetWidth = 200;
                 historyPanelVisible = true;
+                historyPanel.Visible = true;
             }
             historyPanelTimer.Start();
         }

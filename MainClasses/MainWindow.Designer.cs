@@ -305,8 +305,9 @@ namespace PaintfromScratch
             historyPanel.BorderStyle = BorderStyle.FixedSingle;
             historyPanel.Location = new Point(601, 3);
             historyPanel.Name = "historyPanel";
-            historyPanel.Size = new Size(85, 501);
+            historyPanel.Size = new Size(85, 701);
             historyPanel.TabIndex = 0;
+            historyPanel.Visible = false;
             // 
             // BrushButton
             // 
@@ -411,7 +412,7 @@ namespace PaintfromScratch
             historyToggleButton.Image = PublicResXFileCodeGenerator.Resources.history;
             historyToggleButton.ImageTransparentColor = Color.Magenta;
             historyToggleButton.Name = "historyToggleButton";
-            historyToggleButton.Size = new Size(30, 30);
+            historyToggleButton.Size = new Size(23, 30);
             historyToggleButton.Text = "History Tool";
             historyToggleButton.ToolTipText = "History Tool";
             historyToggleButton.Click += historyToggleButton_Click;
@@ -422,7 +423,7 @@ namespace PaintfromScratch
             ApplyButton.Image = PublicResXFileCodeGenerator.Resources.check_mark;
             ApplyButton.ImageTransparentColor = Color.Magenta;
             ApplyButton.Name = "ApplyButton";
-            ApplyButton.Size = new Size(30, 30);
+            ApplyButton.Size = new Size(23, 30);
             ApplyButton.Text = "ApplyButton";
             ApplyButton.ToolTipText = "Apply Button";
             ApplyButton.Visible = false;
