@@ -105,9 +105,9 @@ namespace PaintfromScratch
             rectItem = new ToolStripMenuItem();
             ellipseItem = new ToolStripMenuItem();
             CleanButton = new ToolStripButton();
+            historyToggleButton = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             ApplyButton = new ToolStripButton();
-            historyToggleButton = new ToolStripButton();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -355,7 +355,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, historyToggleButton, toolStripSeparator1, ApplyButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, historyToggleButton, ApplyButton });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 33);
@@ -400,6 +400,17 @@ namespace PaintfromScratch
             CleanButton.Text = "Cleaning tool";
             CleanButton.Click += CleanButton_Click;
             // 
+            // historyToggleButton
+            // 
+            historyToggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            historyToggleButton.Image = (Image)resources.GetObject("historyToggleButton.Image");
+            historyToggleButton.ImageTransparentColor = Color.Magenta;
+            historyToggleButton.Name = "historyToggleButton";
+            historyToggleButton.Size = new Size(23, 30);
+            historyToggleButton.Text = "History Tool";
+            historyToggleButton.ToolTipText = "History Tool";
+            historyToggleButton.Click += historyToggleButton_Click;
+            // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
@@ -411,22 +422,11 @@ namespace PaintfromScratch
             ApplyButton.Image = PublicResXFileCodeGenerator.Resources.check_mark;
             ApplyButton.ImageTransparentColor = Color.Magenta;
             ApplyButton.Name = "ApplyButton";
-            ApplyButton.Size = new Size(30, 30);
+            ApplyButton.Size = new Size(23, 30);
             ApplyButton.Text = "ApplyButton";
             ApplyButton.ToolTipText = "Apply Button";
             ApplyButton.Visible = false;
             ApplyButton.Click += ApplyButton_Click;
-            // 
-            // historyToggleButton
-            // 
-            historyToggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            historyToggleButton.Image = (Image)resources.GetObject("historyToggleButton.Image");
-            historyToggleButton.ImageTransparentColor = Color.Magenta;
-            historyToggleButton.Name = "historyToggleButton";
-            historyToggleButton.Size = new Size(23, 30);
-            historyToggleButton.Text = "History Tool";
-            historyToggleButton.ToolTipText = "History Tool";
-            historyToggleButton.Click += historyToggleButton_Click;
             // 
             // MainWindow
             // 

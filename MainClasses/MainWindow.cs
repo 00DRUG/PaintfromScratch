@@ -1,4 +1,5 @@
 ﻿using PaintfromScratch.DrawingClasses;
+using PaintfromScratch.Extensions;
 using PaintfromScratch.FiguresClasses;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -163,7 +164,7 @@ namespace PaintfromScratch
                 Bitmap canvasBitmap = new Bitmap(canvasWidth, canvasHeight);
 
                 PictureBox_creation_and_add(newTabPage, canvasBitmap);
-
+                AddToHistory(canvasBitmap, "New Canvas Created");
             }
         }
         private void CleanButton_Click(object sender, EventArgs e)
@@ -184,7 +185,7 @@ namespace PaintfromScratch
             GetCurrentShapes().Clear();
             pictureBox.Image = newBitmap;
             pictureBox.Tag = newBitmap;
-
+            AddToHistory(newBitmap, "Canvas Cleared");
         }
         private void ExitButton_Click(object sender, EventArgs e)
         {
@@ -266,6 +267,7 @@ namespace PaintfromScratch
                     shapes.Remove(selectedShapeForManipulation);
                     selectedShapeForManipulation = null;
                     isManipulatingShape = false;
+                    AddToHistory(canvasBitmap, "Shape Manipulated");
                 }
                 else
                 {
@@ -284,6 +286,7 @@ namespace PaintfromScratch
                 shapes.RemoveAt(shapes.Count - 1);
                 previewShape = null;
                 pictureBox.Invalidate();
+                AddToHistory(canvasBitmap, $"Shape Created: {selectedShape}");
             }
             currentManipulationMode = ManipulationMode.None;
             activeResizeHandle = ResizeHandle.None;
@@ -359,8 +362,7 @@ namespace PaintfromScratch
                     // Create new tab and canvas
                     TabPage newTabPage = new TabPage(Path.GetFileNameWithoutExtension(openDialog.FileName));
                     PictureBox_creation_and_add(newTabPage, loadedImage);
-
-
+                    AddToHistory(loadedImage, "Image Loaded");
                 }
             }
         }
@@ -712,7 +714,6 @@ namespace PaintfromScratch
         }
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
-
             PictureBox pictureBox = sender as PictureBox;
             if (pictureBox == null || pictureBox.Image == null) return;
 
@@ -760,6 +761,7 @@ namespace PaintfromScratch
 
                     FloodFill(bmp, e.Location, clickedColor, currentBrush.Color);
                     pictureBox.Invalidate();
+                    AddToHistory(bmp, "Filled Area");
                 }
                 else if (isManipulatingShape)
                 {
@@ -853,11 +855,21 @@ namespace PaintfromScratch
             {
                 isPainting = false;
                 currentBrush.ResetLastPoint();
+                PictureBox pictureBox = sender as PictureBox;
+                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                {
+                    AddToHistory(canvas, "Brush Stroke");
+                }
             }
             if (isErasing)
             {
                 isErasing = false;
                 eraser.ResetLastPoint();
+                PictureBox pictureBox = sender as PictureBox;
+                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                {
+                    AddToHistory(canvas, "Erased Area");
+                }
             }
             if (selectedShape != ShapeType.None && previewShape != null)
             {
@@ -868,6 +880,8 @@ namespace PaintfromScratch
                     GetCurrentShapes().Add(previewShape);
                     previewShape = null;
                     pictureBox.Invalidate();
+                    // Add history for shape creation
+                    AddToHistory(pictureBox.Tag as Bitmap, $"Shape Created: {selectedShape}");
                 }
                 skipNextPreviewShapeAdd = false;
             }
@@ -877,16 +891,13 @@ namespace PaintfromScratch
                 currentManipulationMode = ManipulationMode.None;
                 activeResizeHandle = ResizeHandle.None;
                 Cursor = Cursors.Default;
-            }
-
-            if (isPainting || isErasing || previewShape != null || isManipulatingShape)
-            {
                 PictureBox pictureBox = sender as PictureBox;
                 if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
                 {
-                    AddToHistory(canvas);
+                    AddToHistory(canvas, "Shape Manipulated");
                 }
             }
+
 
         }
         /*private void RedrawPictureBox(PictureBox pictureBox, TabPage tabPage)
@@ -954,47 +965,52 @@ namespace PaintfromScratch
 
 
         // history related functions
-        private List<Bitmap> historySnapshots = new List<Bitmap>();
-        private void AddToHistory(Bitmap canvasBitmap)
+        private List<HistoryEntry> historyEntries = new List<HistoryEntry>();
+        private void AddToHistory(Bitmap canvasBitmap, string description)
         {
             Bitmap snapshot = new Bitmap(canvasBitmap);
-            historySnapshots.Add(snapshot);
-            AddThumbnailToHistoryView(snapshot, historySnapshots.Count - 1);
-        }
-        private void AddThumbnailToHistoryView(Bitmap snapshot, int index)
-        {
-            PictureBox thumbnail = new PictureBox
-            {
-                Width = 100,
-                Height = 70,
-                SizeMode = PictureBoxSizeMode.Zoom,
-                Image = new Bitmap(snapshot),
-                Margin = new Padding(2)
-            };
-
-            ToolTip tooltip = new ToolTip();
-            tooltip.SetToolTip(thumbnail, $"Step #{index + 1}");
-
-            thumbnail.Click += (s, e) => GoToHistoryState(index);
-
-            historyPanel.Controls.Add(thumbnail);
+            historyEntries.Add(new HistoryEntry { Snapshot = snapshot, Description = description });
+            AddTextBoxToHistoryView(description, historyEntries.Count - 1);
         }
         private void GoToHistoryState(int index)
         {
             var pictureBox = GetActivePictureBox();
-            if (pictureBox != null && index >= 0 && index < historySnapshots.Count)
+            if (pictureBox != null && index >= 0 && index < historyEntries.Count)
             {
                 pictureBox.Image?.Dispose();
-                pictureBox.Image = new Bitmap(historySnapshots[index]);
+                pictureBox.Image = new Bitmap(historyEntries[index].Snapshot);
                 pictureBox.Tag = pictureBox.Image;
             }
         }
+        private void AddTextBoxToHistoryView(string description, int index)
+        {
+            Panel box = new Panel
+            {
+                Width = 100,
+                Height = 40,
+                Margin = new Padding(2),
+                BackColor = Color.White,
+                Dock = DockStyle.Top
+            };
+            Label label = new Label
+            {
+                Text = $"{index + 1}: {description}",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 9, FontStyle.Regular)
+            };
+            box.Controls.Add(label);
+            box.Click += (s, e) => GoToHistoryState(index);
+            historyPanel.Controls.Add(box);
+            // stacked boxes 
+            historyPanel.Controls.SetChildIndex(box, 0);
+        }
 
-
+        // Panel closing/opening related functions
         private System.Windows.Forms.Timer historyPanelTimer = new System.Windows.Forms.Timer();
         private bool historyPanelVisible = true;
-        private int historyPanelTargetWidth = 120; // Default width
-        private int historyPanelMinWidth = 0;      // Closed width
+        private int historyPanelTargetWidth = 120; 
+        private int historyPanelMinWidth = 0;      
 
         private void InitializeHistoryPanelCurtain()
         {
