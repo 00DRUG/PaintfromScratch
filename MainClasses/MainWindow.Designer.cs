@@ -105,8 +105,8 @@ namespace PaintfromScratch
             rectItem = new ToolStripMenuItem();
             ellipseItem = new ToolStripMenuItem();
             CleanButton = new ToolStripButton();
-            historyToggleButton = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
+            historyToggleButton = new ToolStripButton();
             ApplyButton = new ToolStripButton();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -400,21 +400,21 @@ namespace PaintfromScratch
             CleanButton.Text = "Cleaning tool";
             CleanButton.Click += CleanButton_Click;
             // 
-            // historyToggleButton
-            // 
-            historyToggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            historyToggleButton.Image = (Image)resources.GetObject("historyToggleButton.Image");
-            historyToggleButton.ImageTransparentColor = Color.Magenta;
-            historyToggleButton.Name = "historyToggleButton";
-            historyToggleButton.Size = new Size(23, 30);
-            historyToggleButton.Text = "History Tool";
-            historyToggleButton.ToolTipText = "History Tool";
-            historyToggleButton.Click += historyToggleButton_Click;
-            // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(6, 33);
+            // 
+            // historyToggleButton
+            // 
+            historyToggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            historyToggleButton.Image = PublicResXFileCodeGenerator.Resources.history;
+            historyToggleButton.ImageTransparentColor = Color.Magenta;
+            historyToggleButton.Name = "historyToggleButton";
+            historyToggleButton.Size = new Size(30, 30);
+            historyToggleButton.Text = "History Tool";
+            historyToggleButton.ToolTipText = "History Tool";
+            historyToggleButton.Click += historyToggleButton_Click;
             // 
             // ApplyButton
             // 
@@ -422,7 +422,7 @@ namespace PaintfromScratch
             ApplyButton.Image = PublicResXFileCodeGenerator.Resources.check_mark;
             ApplyButton.ImageTransparentColor = Color.Magenta;
             ApplyButton.Name = "ApplyButton";
-            ApplyButton.Size = new Size(23, 30);
+            ApplyButton.Size = new Size(30, 30);
             ApplyButton.Text = "ApplyButton";
             ApplyButton.ToolTipText = "Apply Button";
             ApplyButton.Visible = false;
