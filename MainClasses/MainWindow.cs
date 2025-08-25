@@ -886,17 +886,18 @@ namespace PaintfromScratch
                 }
                 skipNextPreviewShapeAdd = false;
             }
-            if (isManipulatingShape)
+            if (isManipulatingShape && selectedShapeForManipulation !=null )
             {
+
+                PictureBox pictureBox = sender as PictureBox;
+                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
+                {
+                    AddToHistory(canvas, $"Shape {currentManipulationMode}: {selectedShapeForManipulation.Type}");
+                }
                 //selectedShapeForManipulation = null;
                 currentManipulationMode = ManipulationMode.None;
                 activeResizeHandle = ResizeHandle.None;
                 Cursor = Cursors.Default;
-                PictureBox pictureBox = sender as PictureBox;
-                if (pictureBox != null && pictureBox.Tag is Bitmap canvas)
-                {
-                    AddToHistory(canvas, "Shape Manipulated");
-                }
             }
 
 
@@ -970,7 +971,8 @@ namespace PaintfromScratch
         private void AddToHistory(Bitmap canvasBitmap, string description)
         {
             Bitmap snapshot = new Bitmap(canvasBitmap);
-            historyEntries.Add(new HistoryEntry { Snapshot = snapshot, Description = description });
+            var shapesCopy = GetCurrentShapes().Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness)).ToList();
+            historyEntries.Add(new HistoryEntry { Snapshot = snapshot, Description = description, ShapesSnapshot = shapesCopy });
             AddTextBoxToHistoryView(description, historyEntries.Count - 1);
         }
         private void GoToHistoryState(int index)
@@ -982,14 +984,29 @@ namespace PaintfromScratch
                 pictureBox.Image = new Bitmap(historyEntries[index].Snapshot);
                 pictureBox.Tag = pictureBox.Image;
 
-                // Remove all history entries AFTER the clicked index
+                if (tabControl?.SelectedTab != null)
+                {
+                    tabShapes[tabControl.SelectedTab] = historyEntries[index].ShapesSnapshot
+                        .Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness))
+                        .ToList();
+                }
+                // Reset manipulation state 
+                selectedShapeForManipulation = null;
+                isManipulatingShape = false;
+                currentManipulationMode = ManipulationMode.None;
+                activeResizeHandle = ResizeHandle.None;
+                previewShape = null;
+                Cursor = Cursors.Default;
+                ApplyButton.Visible = false;
+
+
                 int removeCount = historyEntries.Count - (index + 1);
                 if (removeCount > 0)
                 {
                     historyEntries.RemoveRange(index + 1, removeCount);
                 }
-                //Rebuild the history 
                 RebuildHistoryPanel(index);
+                pictureBox.Invalidate();
             }
         }
         private void RebuildHistoryPanel(int selectedIndex)
