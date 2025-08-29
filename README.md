@@ -4,17 +4,18 @@ Paint from Scratch is a Windows Forms application built with C# (.NET 8) that pr
 
 ## Features
 
-- **Multi-Tab Canvas:** Create and manage multiple canvases in separate tabs.
+- **Multi-Tab Canvas:** Create and manage multiple canvases in separate tabs. Each tab can be renamed, saved, or closed individually.
 - **Custom Brush Tool:** Draw with configurable brush shapes (Circle, Square, Triangle, Star), color, thickness, and spacing.
 - **Eraser Tool:** Erase parts of your drawing with adjustable size.
-- **Shape Drawing:** Add rectangles and ellipses with customizable color and thickness.
-- **Shape Manipulation:** Move and resize shapes after creation.
+- **Shape Drawing:** Add rectangles and ellipses with customizable color and thickness. Preview shapes before applying.
+- **Shape Manipulation:** Move and resize shapes after creation using manipulation handles.
 - **Background Fill:** Fill areas with a selected color using a flood fill algorithm.
-- **Color Picker:** Select colors using an interactive color wheel or RGB sliders.
-- **History Panel:** Undo actions and restore previous states of your canvas.
+- **Color Picker:** Select colors using an interactive color wheel or RGB sliders. Preview the selected color.
+- **History Panel:** Undo actions and restore previous states of your canvas. 
 - **File Operations:** Open, save, and export canvases in PNG, JPEG, or BMP formats.
-- **Tab Management:** Rename, close, and save tabs individually.
+- **Tab Management:** Rename, close, and save tabs individually, with prompts for unsaved changes.
 - **Checkerboard Background:** Visualize transparency with a checkerboard pattern.
+- **Zoom & Pan:** Zoom in/out with the mouse wheel and pan the canvas by holding Space and dragging.
 
 
 ## Usage
@@ -27,6 +28,9 @@ Paint from Scratch is a Windows Forms application built with C# (.NET 8) that pr
 - **Manipulate Tool:** Click the manipulate icon, then select a shape to move or resize. Use the handles for resizing.
 - **Background Fill:** Click the fill icon, then click on the canvas to fill an area with the selected color.
 - **History Panel:** Toggle the history panel to view and restore previous states.
+- **Apply Button:** Apply figures to the main canvas to be able to fill them or not to mess them with further manipulation.
+- **Undo Tool:** Get one action back in your timeline to correct mistakes.
+- **Redo Tool:** Can restore history to some further states to correct the mistakes and be back on track.
 
 ### File Operations
 
