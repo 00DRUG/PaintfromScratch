@@ -44,6 +44,7 @@ namespace PaintfromScratch
         private ManipulationMode currentManipulationMode = ManipulationMode.None;
         private Shape? previewShape = null; //for the preview of the shape being drawn
 
+
         //Buttons related functions
         private void BrushButton_Click(object sender, EventArgs e)
         {
@@ -403,7 +404,64 @@ namespace PaintfromScratch
                 }
             }
         }
+        private void UndoButton_Click(object sender, EventArgs e)
+        {
+            var tab = tabControl?.SelectedTab;
+            if (tab == null || !tabHistoryEntries.ContainsKey(tab)) return;
+            var historyEntries = tabHistoryEntries[tab];
 
+            if (historyEntries.Count <= 1) return; 
+
+            // Initialize redo stack if needed
+            if (!tabRedoEntries.ContainsKey(tab))
+                tabRedoEntries[tab] = new Stack<HistoryEntry>();
+
+            // Move last entry to redo stack
+            tabRedoEntries[tab].Push(historyEntries[^1]);
+            historyEntries.RemoveAt(historyEntries.Count - 1);
+
+            // Go to previous state
+            GoToHistoryState(historyEntries.Count - 1);
+        }
+        private void RedoButton_Click(object sender, EventArgs e)
+        {
+            var tab = tabControl?.SelectedTab;
+            if (tab == null || !tabRedoBuffer.ContainsKey(tab)) return;
+            var historyEntries = tabHistoryEntries[tab];
+            var redoBuffer = tabRedoBuffer[tab];
+
+            if (redoBuffer.Count == 0) return;
+
+            historyEntries.AddRange(redoBuffer);
+
+            var pictureBox = GetActivePictureBox();
+            int lastIndex = historyEntries.Count - 1;
+            if (pictureBox != null && lastIndex >= 0)
+            {
+                var entry = historyEntries[lastIndex];
+                pictureBox.Image?.Dispose();
+                pictureBox.Image = new Bitmap(entry.Snapshot);
+                pictureBox.Tag = pictureBox.Image;
+
+                tabShapes[tab] = entry.ShapesSnapshot
+                    .Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness))
+                    .ToList();
+
+                selectedShapeForManipulation = null;
+                isManipulatingShape = false;
+                currentManipulationMode = ManipulationMode.None;
+                activeResizeHandle = ResizeHandle.None;
+                previewShape = null;
+                Cursor = Cursors.Default;
+                ApplyButton.Visible = false;
+
+                RebuildHistoryPanel(lastIndex);
+                pictureBox.Invalidate();
+            }
+
+            // Clear buffer after redo
+            redoBuffer.Clear();
+        }
         //Helper related functions
         private Rectangle GetImageDisplayRectangle(PictureBox pb)
         {
@@ -979,6 +1037,9 @@ namespace PaintfromScratch
 
         // history related functions
         private Dictionary<TabPage, List<HistoryEntry>> tabHistoryEntries = new();
+        private Dictionary<TabPage, Stack<HistoryEntry>> tabRedoEntries = new();
+        private Dictionary<TabPage, List<HistoryEntry>> tabRedoBuffer = new();
+        private Dictionary<TabPage, int> tabRedoTargetIndex = new();
         private void AddToHistory(Bitmap canvasBitmap, string description)
         {
             Bitmap snapshot = new Bitmap(canvasBitmap);
@@ -990,6 +1051,11 @@ namespace PaintfromScratch
             var historyEntries = tabHistoryEntries[tab];
             historyEntries.Add(new HistoryEntry { Snapshot = snapshot, Description = description, ShapesSnapshot = shapesCopy });
             AddTextBoxToHistoryView(description, historyEntries.Count - 1);
+            // Clear redo stack on new action
+            if (tabRedoEntries.ContainsKey(tab))
+                tabRedoEntries[tab].Clear();
+            if (tabRedoBuffer.ContainsKey(tab))
+                tabRedoBuffer[tab].Clear();
         }
         private void GoToHistoryState(int index)
         {
@@ -997,6 +1063,25 @@ namespace PaintfromScratch
             var tab = tabControl?.SelectedTab;
             if (tab == null || !tabHistoryEntries.ContainsKey(tab)) return;
             var historyEntries = tabHistoryEntries[tab];
+
+            // Save redo buffer for "jump" action
+            if (!tabRedoBuffer.ContainsKey(tab))
+                tabRedoBuffer[tab] = new List<HistoryEntry>();
+            tabRedoBuffer[tab].Clear();
+            tabRedoTargetIndex[tab] = historyEntries.Count - 1; // Save where the user jumped from
+
+            for (int i = index + 1; i < historyEntries.Count; i++)
+            {
+                tabRedoBuffer[tab].Add(historyEntries[i]);
+            }
+
+            // Remove them from history
+            int removeCount = historyEntries.Count - (index + 1);
+            if (removeCount > 0)
+            {
+                historyEntries.RemoveRange(index + 1, removeCount);
+            }
+
             if (pictureBox != null && index >= 0 && index < historyEntries.Count)
             {
                 pictureBox.Image?.Dispose();
@@ -1015,11 +1100,6 @@ namespace PaintfromScratch
                 Cursor = Cursors.Default;
                 ApplyButton.Visible = false;
 
-                int removeCount = historyEntries.Count - (index + 1);
-                if (removeCount > 0)
-                {
-                    historyEntries.RemoveRange(index + 1, removeCount);
-                }
                 RebuildHistoryPanel(index);
                 pictureBox.Invalidate();
             }
@@ -1236,5 +1316,7 @@ namespace PaintfromScratch
 
             historyPreviewForm.Show();
         }
+
+        
     }
 }

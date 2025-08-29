@@ -107,8 +107,9 @@ namespace PaintfromScratch
             CleanButton = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             historyToggleButton = new ToolStripButton();
-            ApplyButton = new ToolStripButton();
             UndoButton = new ToolStripButton();
+            RedoButton = new ToolStripButton();
+            ApplyButton = new ToolStripButton();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -357,7 +358,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, historyToggleButton, ApplyButton, UndoButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, historyToggleButton, UndoButton, RedoButton, ApplyButton });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 33);
@@ -418,6 +419,27 @@ namespace PaintfromScratch
             historyToggleButton.ToolTipText = "History Tool";
             historyToggleButton.Click += historyToggleButton_Click;
             // 
+            // UndoButton
+            // 
+            UndoButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            UndoButton.Image = PublicResXFileCodeGenerator.Resources.redo11;
+            UndoButton.ImageTransparentColor = Color.Magenta;
+            UndoButton.Name = "UndoButton";
+            UndoButton.Size = new Size(23, 30);
+            UndoButton.Text = "UndoButton";
+            UndoButton.ToolTipText = "UndoButton";
+            UndoButton.Click += UndoButton_Click;
+            // 
+            // RedoButton
+            // 
+            RedoButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            RedoButton.Image = PublicResXFileCodeGenerator.Resources.redo;
+            RedoButton.ImageTransparentColor = Color.Magenta;
+            RedoButton.Name = "RedoButton";
+            RedoButton.Size = new Size(23, 30);
+            RedoButton.Text = "Redo Button";
+            RedoButton.Click += RedoButton_Click;
+            // 
             // ApplyButton
             // 
             ApplyButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
@@ -429,17 +451,6 @@ namespace PaintfromScratch
             ApplyButton.ToolTipText = "Apply Button";
             ApplyButton.Visible = false;
             ApplyButton.Click += ApplyButton_Click;
-            // 
-            // UndoButton
-            // 
-            UndoButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            UndoButton.Image = (Image)resources.GetObject("UndoButton.Image");
-            UndoButton.ImageTransparentColor = Color.Magenta;
-            UndoButton.Name = "UndoButton";
-            UndoButton.Size = new Size(23, 30);
-            UndoButton.Text = "UndoButton";
-            UndoButton.ToolTipText = "UndoButton";
-            UndoButton.Visible = false;
             // 
             // MainWindow
             // 
@@ -502,5 +513,6 @@ namespace PaintfromScratch
         private ToolStripButton ApplyButton;
         private ToolStripButton historyToggleButton;
         private ToolStripButton UndoButton;
+        private ToolStripButton RedoButton;
     }
 }
