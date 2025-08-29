@@ -596,6 +596,7 @@ namespace PaintfromScratch
 
                 if (closeButtonRect.Contains(e.Location))
                 {
+                    TabPage tabPage = tabControl.TabPages[i];
                     DialogResult result = MessageBox.Show("Do you want to save this tab before closing?", "Save Tab", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
                     if (result == DialogResult.Yes)
@@ -619,6 +620,8 @@ namespace PaintfromScratch
                     else if (result == DialogResult.No)
                     {
                         tabControl.TabPages.RemoveAt(i);
+                        tabHistoryEntries.Remove(tabPage);
+                        tabShapes.Remove(tabPage);
                     }
 
                     break;
@@ -640,8 +643,13 @@ namespace PaintfromScratch
                 tabControl.DrawItem += TabControl_DrawItem;
                 tabControl.MouseDown += TabControl_MouseDown;
                 tabControl.MouseUp += TabControl_MouseUp;
+                tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
             }
 
+        }
+        private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RebuildHistoryPanel(-1); 
         }
         private void TabControl_MouseUp(object sender, MouseEventArgs e)
         {
@@ -712,6 +720,9 @@ namespace PaintfromScratch
             tabControl.SelectedTab = newTabPage;
 
             tabShapes[newTabPage] = new List<Shape>();
+            tabHistoryEntries[newTabPage] = new List<HistoryEntry>();
+            // refresh history panel
+            RebuildHistoryPanel(-1);
         }
         private void PictureBox_MouseDown(object sender, MouseEventArgs e)
         {
@@ -967,30 +978,35 @@ namespace PaintfromScratch
 
 
         // history related functions
-        private List<HistoryEntry> historyEntries = new List<HistoryEntry>();
+        private Dictionary<TabPage, List<HistoryEntry>> tabHistoryEntries = new();
         private void AddToHistory(Bitmap canvasBitmap, string description)
         {
             Bitmap snapshot = new Bitmap(canvasBitmap);
             var shapesCopy = GetCurrentShapes().Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness)).ToList();
+            var tab = tabControl?.SelectedTab;
+            if (tab == null) return;
+            if (!tabHistoryEntries.ContainsKey(tab))
+                tabHistoryEntries[tab] = new List<HistoryEntry>();
+            var historyEntries = tabHistoryEntries[tab];
             historyEntries.Add(new HistoryEntry { Snapshot = snapshot, Description = description, ShapesSnapshot = shapesCopy });
             AddTextBoxToHistoryView(description, historyEntries.Count - 1);
         }
         private void GoToHistoryState(int index)
         {
             var pictureBox = GetActivePictureBox();
+            var tab = tabControl?.SelectedTab;
+            if (tab == null || !tabHistoryEntries.ContainsKey(tab)) return;
+            var historyEntries = tabHistoryEntries[tab];
             if (pictureBox != null && index >= 0 && index < historyEntries.Count)
             {
                 pictureBox.Image?.Dispose();
                 pictureBox.Image = new Bitmap(historyEntries[index].Snapshot);
                 pictureBox.Tag = pictureBox.Image;
 
-                if (tabControl?.SelectedTab != null)
-                {
-                    tabShapes[tabControl.SelectedTab] = historyEntries[index].ShapesSnapshot
-                        .Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness))
-                        .ToList();
-                }
-                // Reset manipulation state 
+                tabShapes[tab] = historyEntries[index].ShapesSnapshot
+                    .Select(s => new Shape(s.Type, s.Bounds.Location, new Point(s.Bounds.Right, s.Bounds.Bottom), s.Color, s.Thickness))
+                    .ToList();
+                // Reset manipulation state
                 selectedShapeForManipulation = null;
                 isManipulatingShape = false;
                 currentManipulationMode = ManipulationMode.None;
@@ -998,7 +1014,6 @@ namespace PaintfromScratch
                 previewShape = null;
                 Cursor = Cursors.Default;
                 ApplyButton.Visible = false;
-
 
                 int removeCount = historyEntries.Count - (index + 1);
                 if (removeCount > 0)
@@ -1011,6 +1026,9 @@ namespace PaintfromScratch
         }
         private void RebuildHistoryPanel(int selectedIndex)
         {
+            var tab = tabControl?.SelectedTab;
+            if (tab == null || !tabHistoryEntries.ContainsKey(tab)) return;
+            var historyEntries = tabHistoryEntries[tab];
             historyPanel.Controls.Clear();
             for (int i = historyEntries.Count - 1; i >= 0; i--)
             {
@@ -1034,8 +1052,7 @@ namespace PaintfromScratch
 
                 box.Click += Box_Click;
                 label.Click += Box_Click;
-
-                // Ensure hover events are attached 
+                //Ensure connection
                 box.MouseEnter += HistoryBox_MouseEnter;
                 box.MouseLeave += HistoryBox_MouseLeave;
                 label.MouseEnter += HistoryBox_MouseEnter;
@@ -1072,7 +1089,7 @@ namespace PaintfromScratch
 
             box.Click += Box_Click;
             label.Click += Box_Click;
-            // Hover the box events for better UX
+            //Ensure connection
             box.MouseEnter += HistoryBox_MouseEnter;
             box.MouseLeave += HistoryBox_MouseLeave;
             label.MouseEnter += HistoryBox_MouseEnter;
@@ -1171,10 +1188,12 @@ namespace PaintfromScratch
         private void HistoryPreviewTimer_Tick(object? sender, EventArgs e)
         {
             historyPreviewTimer.Stop();
+            var tab = tabControl?.SelectedTab;
+            if (tab == null || !tabHistoryEntries.ContainsKey(tab)) return;
+            var historyEntries = tabHistoryEntries[tab];
             if (hoveredHistoryIndex < 0 || hoveredHistoryIndex >= historyEntries.Count)
                 return;
 
-            // Dispose
             if (historyPreviewForm != null)
             {
                 historyPreviewForm.Close();
@@ -1183,13 +1202,10 @@ namespace PaintfromScratch
 
             var entry = historyEntries[hoveredHistoryIndex];
 
-            // Create a temporary bitmap for preview
             Bitmap previewBitmap = new Bitmap(entry.Snapshot.Width, entry.Snapshot.Height);
             using (Graphics g = Graphics.FromImage(previewBitmap))
             {
                 g.DrawImage(entry.Snapshot, 0, 0);
-
-                // Draw unapplied shapes
                 foreach (var shape in entry.ShapesSnapshot)
                 {
                     shape.Draw(g);
@@ -1215,7 +1231,6 @@ namespace PaintfromScratch
             };
             historyPreviewForm.Controls.Add(pb);
 
-            // Position near mouse
             var mousePos = Cursor.Position;
             historyPreviewForm.Location = new Point(mousePos.X + 10, mousePos.Y + 10);
 
