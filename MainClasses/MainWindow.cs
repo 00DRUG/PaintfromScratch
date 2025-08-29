@@ -1035,6 +1035,12 @@ namespace PaintfromScratch
                 box.Click += Box_Click;
                 label.Click += Box_Click;
 
+                // Ensure hover events are attached 
+                box.MouseEnter += HistoryBox_MouseEnter;
+                box.MouseLeave += HistoryBox_MouseLeave;
+                label.MouseEnter += HistoryBox_MouseEnter;
+                label.MouseLeave += HistoryBox_MouseLeave;
+
                 historyPanel.Controls.Add(box);
             }
         }
@@ -1066,7 +1072,11 @@ namespace PaintfromScratch
 
             box.Click += Box_Click;
             label.Click += Box_Click;
-
+            // Hover the box events for better UX
+            box.MouseEnter += HistoryBox_MouseEnter;
+            box.MouseLeave += HistoryBox_MouseLeave;
+            label.MouseEnter += HistoryBox_MouseEnter;
+            label.MouseLeave += HistoryBox_MouseLeave;
             historyPanel.Controls.Add(box);
             historyPanel.Controls.SetChildIndex(box, 0);
         }
@@ -1075,12 +1085,17 @@ namespace PaintfromScratch
         private System.Windows.Forms.Timer historyPanelTimer = new System.Windows.Forms.Timer();
         private bool historyPanelVisible = true;
         private int historyPanelTargetWidth = 200; 
-        private int historyPanelMinWidth = 0;      
+        private int historyPanelMinWidth = 0;
+        private System.Windows.Forms.Timer historyPreviewTimer = new System.Windows.Forms.Timer();
+        private int hoveredHistoryIndex = -1;
+        private Form? historyPreviewForm = null;
 
         private void InitializeHistoryPanelCurtain()
         {
             historyPanelTimer.Interval = 10;
             historyPanelTimer.Tick += HistoryPanelTimer_Tick;
+            historyPreviewTimer.Interval = 600; 
+            historyPreviewTimer.Tick += HistoryPreviewTimer_Tick;
         }
 
         private void historyToggleButton_Click(object sender, EventArgs e)
@@ -1133,6 +1148,78 @@ namespace PaintfromScratch
                     historyPanelTimer.Stop();
                 }
             }
+        }
+        private void HistoryBox_MouseEnter(object sender, EventArgs e)
+        {
+            if (sender is Control ctrl && ctrl.Tag is int idx)
+            {
+                hoveredHistoryIndex = idx;
+                historyPreviewTimer.Start();
+            }
+        }
+
+        private void HistoryBox_MouseLeave(object sender, EventArgs e)
+        {
+            historyPreviewTimer.Stop();
+            hoveredHistoryIndex = -1;
+            if (historyPreviewForm != null)
+            {
+                historyPreviewForm.Close();
+                historyPreviewForm = null;
+            }
+        }
+        private void HistoryPreviewTimer_Tick(object? sender, EventArgs e)
+        {
+            historyPreviewTimer.Stop();
+            if (hoveredHistoryIndex < 0 || hoveredHistoryIndex >= historyEntries.Count)
+                return;
+
+            // Dispose
+            if (historyPreviewForm != null)
+            {
+                historyPreviewForm.Close();
+                historyPreviewForm = null;
+            }
+
+            var entry = historyEntries[hoveredHistoryIndex];
+
+            // Create a temporary bitmap for preview
+            Bitmap previewBitmap = new Bitmap(entry.Snapshot.Width, entry.Snapshot.Height);
+            using (Graphics g = Graphics.FromImage(previewBitmap))
+            {
+                g.DrawImage(entry.Snapshot, 0, 0);
+
+                // Draw unapplied shapes
+                foreach (var shape in entry.ShapesSnapshot)
+                {
+                    shape.Draw(g);
+                }
+            }
+            Bitmap scaledPreview = new Bitmap(previewBitmap, 160, 120);
+
+            historyPreviewForm = new Form
+            {
+                FormBorderStyle = FormBorderStyle.None,
+                StartPosition = FormStartPosition.Manual,
+                Size = new Size(160, 120),
+                TopMost = true,
+                ShowInTaskbar = false,
+                BackColor = Color.White
+            };
+
+            var pb = new PictureBox
+            {
+                Dock = DockStyle.Fill,
+                Image = scaledPreview,
+                SizeMode = PictureBoxSizeMode.Zoom
+            };
+            historyPreviewForm.Controls.Add(pb);
+
+            // Position near mouse
+            var mousePos = Cursor.Position;
+            historyPreviewForm.Location = new Point(mousePos.X + 10, mousePos.Y + 10);
+
+            historyPreviewForm.Show();
         }
     }
 }

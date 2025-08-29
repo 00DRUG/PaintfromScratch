@@ -108,6 +108,7 @@ namespace PaintfromScratch
             toolStripSeparator1 = new ToolStripSeparator();
             historyToggleButton = new ToolStripButton();
             ApplyButton = new ToolStripButton();
+            UndoButton = new ToolStripButton();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -356,7 +357,7 @@ namespace PaintfromScratch
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, historyToggleButton, ApplyButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { EraseButton, BrushButton, FiguresToolButton, BackgroundToolButton, ManipulateButton, CleanButton, toolStripSeparator1, historyToggleButton, ApplyButton, UndoButton });
             toolStrip1.Location = new Point(0, 24);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(766, 33);
@@ -429,6 +430,17 @@ namespace PaintfromScratch
             ApplyButton.Visible = false;
             ApplyButton.Click += ApplyButton_Click;
             // 
+            // UndoButton
+            // 
+            UndoButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            UndoButton.Image = (Image)resources.GetObject("UndoButton.Image");
+            UndoButton.ImageTransparentColor = Color.Magenta;
+            UndoButton.Name = "UndoButton";
+            UndoButton.Size = new Size(23, 30);
+            UndoButton.Text = "UndoButton";
+            UndoButton.ToolTipText = "UndoButton";
+            UndoButton.Visible = false;
+            // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -489,5 +501,6 @@ namespace PaintfromScratch
         private Panel historyPanel;
         private ToolStripButton ApplyButton;
         private ToolStripButton historyToggleButton;
+        private ToolStripButton UndoButton;
     }
 }
