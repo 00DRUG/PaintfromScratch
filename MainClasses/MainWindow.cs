@@ -677,9 +677,23 @@ namespace PaintfromScratch
                     }
                     else if (result == DialogResult.No)
                     {
+                        // Clean Memmory
                         tabControl.TabPages.RemoveAt(i);
                         tabHistoryEntries.Remove(tabPage);
                         tabShapes.Remove(tabPage);
+                        tabRedoEntries.Remove(tabPage);
+                        tabRedoBuffer.Remove(tabPage);
+                        tabRedoTargetIndex.Remove(tabPage);
+
+                        // If no tabs left, clear history panel
+                        if (tabControl.TabPages.Count == 0)
+                        {
+                            historyPanel.Controls.Clear();
+                        }
+                        else
+                        {
+                            RebuildHistoryPanel(-1);
+                        }
                     }
 
                     break;
